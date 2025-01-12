@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Replit</title>
+    <link href="style.css" rel="stylesheet" type="text/css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Load Google Maps API with Places library -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB7VoqLBiyz1woT5ZTcR25mJisFaLOcUVo&libraries=places"></script>
+  </head>
+
+  <body>
+    <div class="main-container" id="main-container">
+      <h1 class="title">Fahrzeit Berechnung</h1>
+      <div class="date-input">
+        <input type="date" value="2024-12-31" />
+      </div>
+
+      <!-- Calculation Block Template -->
+      <div class="calculation-block">
+        <div class="info-section">
+          <!-- Name Section  -->
+          <div class="flex-col">
+            <label>Arbeitgeber Name:</label>
+            <input type="text" value="Rehaklinik Bellikon AG" />
+          </div>
+
+          <div class="row">
+            <input class="start-date" type="date" value="2024-11-21" />
+            <span>bis</span>
+            <input class="end-date" type="date" value="2024-12-31" />
+          </div>
+
+          <div class="flex-col">
+            <label>Heimadresse:</label>
+            <input
+              class="homeAddress"
+              type="text"
+              value="Times Square, Manhattan, NY, USA"
+            />
+          </div>
+          <div class="flex-col">
+            <label>Arbeitgeber:</label>
+            <input
+              class="employerAddress"
+              type="text"
+              value="Central Park Zoo, Manhattan, NY, USA"
+            />
+          </div>
+          <div class="row time">
+            <div class="flex-col">
+              <label>Arbeitsbeginn:</label>
+              <input type="time" value="07:30" />
+            </div>
+            <div class="flex-col">
+              <label>Arbeitsende:</label>
+              <input type="time" value="17:30" />
+            </div>
+          </div>
+          <!-- Calculate Button -->
+          <div class="flex-col">
+            <button class="calculate-button">Calculate Distance</button>
+          </div>
+        </div>
+
+        <div class="result-section">
+          <div class="results">
+            <!-- Default results -->
+            <div>
+              <p><strong>Abzug:</strong> Der Abzug ist möglich.</p>
+              <p class="difference"></p>
+            </div>
+            <div>
+              <p class="days-220">Bei 220d p.a.: <strong>20 Tage</strong></p>
+              <p class="days-240">Bei 240d p.a.: <strong>21 Tage</strong></p>
+            </div>
+          </div>
+
+          <div class="details">
+            <!-- Default detailed values -->
+            <div>
+              <h4>Auto</h4>
+              <p>Auto Reisezeit: -- Minuten</p>
+              <p>Auto Reise in km: -- km</p>
+              <p>Auto Reisezeit am Tag: -- Minuten</p>
+              <p>Auto Reise in km am Tag: -- km</p>
+            </div>
+            <div>
+              <h4>ÖV</h4>
+              <p>Auto Reisezeit: -- Minuten</p>
+              <p>Auto Reise in km: -- km</p>
+              <p>Auto Reisezeit am Tag: -- Minuten</p>
+              <p>Auto Reise in km am Tag: -- km</p>
+            </div>
+            <div>
+              <h4>ÖV Zeiten Arbeitsbeginn</h4>
+              <p>Abreise: -- Uhr</p>
+              <p>Ankunft: -- Uhr</p>
+              <p>Reisezeit: -- Minuten</p>
+              <p>Warten: -- Minuten</p>
+              <p>Reisezeit + Warten: -- Minuten</p>
+            </div>
+            <div>
+              <h4>ÖV Zeiten Arbeitsende</h4>
+              <p>Abreise: -- Uhr</p>
+              <p>Ankunft: -- Uhr</p>
+              <p>Reisezeit: -- Minuten</p>
+              <p>Warten: -- Minuten</p>
+              <p>Reisezeit + Warten: -- Minuten</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="map-section">
+          <div class="map">Loading map...</div>
+        </div>
+      </div>
+
+      <button class="add-button">Add More</button>
+    </div>
+
+    <script type="module" src="script.js"></script>
+  </body>
+</html>

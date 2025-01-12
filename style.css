@@ -1,0 +1,296 @@
+/* Global Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Poppins", serif;
+  }
+  
+  body {
+    background-color: #f9f9f9;
+    padding: 20px;
+  }
+  
+  .main-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .title {
+    text-align: center;
+    font-size: 42px;
+    font-weight: 600;
+    color: #333;
+  }
+  
+  .date-input input {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    margin-bottom: 20px;
+  }
+  
+  /* Calculation Block */
+  .calculation-block {
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+  
+  /* Info Section */
+  .info-section {
+    flex: 1 1 40%;
+    display: flex;
+    flex-direction: column;
+    gap: 1.3rem;
+    background: #f0f8f5;
+    padding: 15px;
+    border: 1px solid #a2d9b9;
+    border-radius: 5px;
+  }
+  
+  .info-section .row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  
+  .info-section label {
+    flex: 0 0 35%;
+    font-size: 14px;
+    color: #333;
+    white-space: nowrap;
+  }
+  
+  .info-section input {
+    flex: 1;
+    padding: 8px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+  }
+  
+  .info-section .time {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+  
+  .info-section .time div {
+    flex: 1 1 45%;
+    display: flex;
+    gap: 10px;
+  }
+  
+  .info-section .time label {
+    flex: 0 0 auto;
+  }
+  
+  .info-section .time input {
+    width: 100%;
+  }
+  
+  .flex-col {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 0.3rem;
+  }
+  
+  /* Result Section */
+  .result-section {
+    flex: 1 1 50%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .results {
+    padding: 15px;
+    background: #f0f8f5;
+    border: 1px solid #a2d9b9;
+    border-radius: 5px;
+  }
+  
+  .results p {
+    font-size: 14px;
+    color: #333;
+  }
+  
+  .result strong {
+    color: #26a65b;
+  }
+  
+  .details {
+    display: flex;
+    flex-wrap: wrap;
+    background: #f0f8f5;
+    padding: 15px;
+    border: 1px solid #a2d9b9;
+    border-radius: 5px;
+    height: 100%;
+    gap: 20px;
+  }
+  
+  .details>div {
+    flex: 1 1 45%;
+    padding: 10px;
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+  }
+  
+  .results {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+  
+  .results>div {
+    flex: 1 1 45%;
+    padding: 10px;
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+  }
+  
+  .details h4 {
+    font-size: 16px;
+    margin-bottom: 10px;
+    color: #333;
+  }
+  
+  .details p {
+    font-size: 14px;
+    color: #555;
+  }
+  
+  /* Map Section */
+  .map-section {
+    flex: 1 1 100%;
+  }
+  
+  .map {
+    width: 100%;
+    height: 300px;
+    background: #eaeaea;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 14px;
+    color: #888;
+  }
+  
+  /* Add Button */
+  .add-button {
+    padding: 10px 20px;
+    font-size: 20px;
+    color: #fff;
+    background: #0d6efd;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin: 0 auto;
+    display: block;
+  }
+  
+  .calculate-button {
+    padding: 10px 20px;
+    width: 100%;
+    font-size: 20px;
+    color: #fff;
+    background: #0d6efd;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin: 0 auto;
+  }
+  
+  
+  
+  /* Responsive Design */
+  
+  /* Medium Devices: Tablets */
+  @media (max-width: 768px) {
+    .calculation-block {
+      flex-direction: column;
+    }
+  
+    .info-section,
+    .result-section,
+    .map-section {
+      flex: 1 1 100%;
+    }
+  
+    .details {
+      flex-direction: column;
+    }
+  
+    .details>div {
+      flex: 1 1 100%;
+    }
+  }
+  
+  /* Small Devices: Large Phones */
+  @media (max-width: 576px) {
+    .title {
+      font-size: 20px;
+    }
+  
+    .info-section label {
+      flex: 0 0 40%;
+      font-size: 13px;
+    }
+  
+    .info-section input,
+    .info-section .time input {
+      font-size: 13px;
+    }
+  
+    .result p,
+    .details p {
+      font-size: 13px;
+    }
+  
+    .details h4 {
+      font-size: 15px;
+    }
+  
+    .add-button {
+      font-size: 18px;
+      padding: 8px 16px;
+    }
+  }
+  
+  /* Extra Small Devices: Small Phones */
+  @media (max-width: 400px) {
+    .info-section .row {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  
+    .info-section label {
+      margin-bottom: 5px;
+    }
+  
+    .info-section .time {
+      flex-direction: column;
+      gap: 10px;
+    }
+  
+    .info-section .time div {
+      width: 100%;
+    }
+  }
