@@ -218,6 +218,8 @@ body {
 .pagination {
   display: flex;
   flex-wrap: wrap;
+  justify-items: center;
+  justify-content: center;
   row-gap: 0.8rem;
   margin-bottom: 10px;
 }
