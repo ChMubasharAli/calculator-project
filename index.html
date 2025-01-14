@@ -17,7 +17,7 @@
     <div class="main-container" id="main-container">
       <h1 class="title">Fahrzeit Berechnung</h1>
       <div class="date-input">
-        <input type="date" value="2024-12-31" />
+        <input type="date" id="globalDate" />
       </div>
 
       <!-- Calculation Block Template -->
@@ -26,39 +26,31 @@
           <!-- Name Section  -->
           <div class="flex-col">
             <label>Arbeitgeber Name:</label>
-            <input type="text" value="Rehaklinik Bellikon AG" />
+            <input type="text" class="employerName" value="" />
           </div>
 
           <div class="row">
-            <input class="start-date" type="date" value="2024-11-21" />
+            <input class="start-date" type="date" />
             <span>bis</span>
-            <input class="end-date" type="date" value="2024-12-31" />
+            <input class="end-date" type="date" />
           </div>
 
           <div class="flex-col">
             <label>Heimadresse:</label>
-            <input
-              class="homeAddress"
-              type="text"
-              value="Times Square, Manhattan, NY, USA"
-            />
+            <input class="homeAddress" type="text" value="" />
           </div>
           <div class="flex-col">
             <label>Arbeitgeber:</label>
-            <input
-              class="employerAddress"
-              type="text"
-              value="Central Park Zoo, Manhattan, NY, USA"
-            />
+            <input class="employerAddress" type="text" value="" />
           </div>
           <div class="row time">
             <div class="flex-col">
               <label>Arbeitsbeginn:</label>
-              <input type="time" value="07:30" />
+              <input type="time" class="startTime" value="07:30" />
             </div>
             <div class="flex-col">
               <label>Arbeitsende:</label>
-              <input type="time" value="17:30" />
+              <input type="time" class="endTime" value="17:30" />
             </div>
           </div>
           <!-- Calculate Button -->
@@ -75,28 +67,32 @@
               <p class="difference"></p>
             </div>
             <div>
-              <p class="days-220">Bei 220d p.a.: <strong>20 Tage</strong></p>
-              <p class="days-240">Bei 240d p.a.: <strong>21 Tage</strong></p>
+              <p class="days-220">Bei 220d p.a.: <strong></strong></p>
+              <p class="days-240">Bei 240d p.a.: <strong></strong></p>
             </div>
           </div>
 
           <div class="details">
             <!-- Default detailed values -->
-            <div>
+            <div class="auto-section">
               <h4>Auto</h4>
               <p>Auto Reisezeit: -- Minuten</p>
               <p>Auto Reise in km: -- km</p>
               <p>Auto Reisezeit am Tag: -- Minuten</p>
               <p>Auto Reise in km am Tag: -- km</p>
             </div>
-            <div>
+            <div class="ov-section">
               <h4>ÖV</h4>
               <p>ÖV Reisezeit: -- Minuten</p>
               <p>ÖV Reise in km: -- km</p>
               <p>ÖV Reisezeit am Tag: -- Minuten</p>
               <p>ÖV Reise in km am Tag: -- km</p>
+              <p>Anfahrt + Wartezeit (Arbeitsbeginn): -- Minuten</p>
+              <p>Rückfahrt + Wartezeit (Arbeitsende): -- Minuten</p>
+              <p>Gesamte ÖV-Zeit + Wartezeit am Tag: -- Minuten</p>
+              <p>ÖV vs. Auto: Zeitunterschied: -- Minuten</p>
             </div>
-            <div>
+            <div class="arbeitsbeginn-section">
               <h4>ÖV Zeiten Arbeitsbeginn</h4>
               <p>Abreise: -- Uhr</p>
               <p>Ankunft: -- Uhr</p>
@@ -104,7 +100,7 @@
               <p>Warten: -- Minuten</p>
               <p>Reisezeit + Warten: -- Minuten</p>
             </div>
-            <div>
+            <div class="arbeitsende-section">
               <h4>ÖV Zeiten Arbeitsende</h4>
               <p>Abreise: -- Uhr</p>
               <p>Ankunft: -- Uhr</p>

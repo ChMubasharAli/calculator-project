@@ -1,3 +1,23 @@
+const holidays = [
+  '2023-01-02', '2023-04-10', '2023-05-01', '2023-05-29', '2023-09-18', '2023-12-25',
+  '2024-01-01', '2024-01-02', '2024-04-01', '2024-04-08', '2024-05-20', '2024-09-16', '2024-12-25',
+  '2025-01-01', '2025-01-02', '2025-04-21', '2025-06-09', '2025-09-15', '2025-12-08'
+];
+
+function isSwissHoliday(date) {
+  const formattedDate = date.toISOString().split('T')[0];
+  return holidays.includes(formattedDate);
+}
+
+function getNextValidMonday() {
+  let date = new Date();
+  date.setMonth(date.getMonth() + 1);
+  while (date.getDay() !== 1 || isSwissHoliday(date)) {
+    date.setDate(date.getDate() + 1);
+  }
+  return date.toISOString().split('T')[0];
+}
+
 function initializeAutocomplete(inputElement) {
   new google.maps.places.Autocomplete(inputElement);
 }
@@ -62,7 +82,6 @@ function extractTransitDetails(legs) {
   if (!legs || legs.length === 0) return details;
 
   const leg = legs[0];
-  // Use 12-hour format with AM/PM
   details.departure = leg.departure_time 
     ? new Date(leg.departure_time.value).toLocaleTimeString([], { 
           hour: '2-digit', minute:'2-digit', hour12: true 
@@ -97,12 +116,20 @@ function extractTransitDetails(legs) {
   return details;
 }
 
+document.addEventListener('DOMContentLoaded', () => {
+  const globalDateInput = document.getElementById('globalDate');
+  if(globalDateInput) {
+    globalDateInput.value = getNextValidMonday();
+  }
+});
+
 async function calculateTravelTime(block) {
-  // Clear previous details to prevent duplication
   const detailsDiv = block.querySelector(".details");
   detailsDiv.innerHTML = ""; 
 
-  // Workday Calculation Logic
+  const employerNameInput = block.querySelector('.employerName');
+  if(employerNameInput) employerNameInput.value = '';
+
   const startDateElement = block.querySelector('.start-date');
   const endDateElement = block.querySelector('.end-date');
 
@@ -110,14 +137,12 @@ async function calculateTravelTime(block) {
     const startDate = new Date(startDateElement.value);
     const endDate = new Date(endDateElement.value);
     
-    // Basic validation: Ensure startDate <= endDate
     if(isNaN(startDate) || isNaN(endDate) || startDate > endDate) {
       console.error("Invalid start or end date.");
     } else {
-      // Calculate total calendar days between dates (inclusive)
       const oneDay = 1000 * 60 * 60 * 24;
       const totalDays = Math.ceil((endDate - startDate) / oneDay) + 1;
-      const daysInYear = 365; // approximation
+      const daysInYear = 365;
       
       const workdays220 = Math.round((totalDays / daysInYear) * 220);
       const workdays240 = Math.round((totalDays / daysInYear) * 240);
@@ -130,17 +155,16 @@ async function calculateTravelTime(block) {
   }
 
   const homeAddress = block.querySelector(".homeAddress").value;
-  const startWorkTime = block.querySelectorAll('input[type="time"]')[0].value;
-  const endWorkTime = block.querySelectorAll('input[type="time"]')[1].value;
+  const startWorkTime = block.querySelector(".startTime").value || "07:30";
+  const endWorkTime = block.querySelector(".endTime").value || "17:30";
   const workAddress = block.querySelector(".employerAddress")
     ? block.querySelector(".employerAddress").value
-    : "Rehaklinik Bellikon AG";
+    : "";
 
   try {
     const homeLocation = await geocodeAddress(homeAddress);
     const workLocation = await geocodeAddress(workAddress);
 
-    // Create dedicated containers for each section
     let autoSection = document.createElement('div');
     autoSection.className = 'auto-section';
     detailsDiv.appendChild(autoSection);
@@ -157,8 +181,20 @@ async function calculateTravelTime(block) {
     arbeitsendeSection.className = 'arbeitsende-section';
     detailsDiv.appendChild(arbeitsendeSection);
 
+    // Initialize ÖV section placeholders
+    ovSection.innerHTML = `
+      <h4>ÖV</h4>
+      <p>ÖV Reisezeit: -- Minuten</p>
+      <p>ÖV Reise in km: -- km</p>
+      <p>ÖV Reisezeit am Tag: -- Minuten</p>
+      <p>ÖV Reise in km am Tag: -- km</p>
+      <p>Anfahrt + Wartezeit (Arbeitsbeginn): -- Minuten</p>
+      <p>Rückfahrt + Wartezeit (Arbeitsende): -- Minuten</p>
+      <p>Gesamte ÖV-Zeit + Wartezeit am Tag: -- Minuten</p>
+      <p>ÖV vs. Auto: Zeitunterschied: -- Minuten</p>
+    `;
+
     let carDurationMinutes = 0;
-    let transitDurationMinutes = 0;
 
     const directionsService = new google.maps.DirectionsService();
     directionsService.route(
@@ -185,11 +221,8 @@ async function calculateTravelTime(block) {
             ? parseFloat(driveDistanceMatch[0])
             : 0;
 
-          const dailyTravelTime = (driveDuration * 2).toFixed(2) + " mins";
-          const dailyDistance =
-            (driveDistance * 2).toFixed(2) +
-            " " +
-            driveDistanceText.replace(/[0-9.]/g, "").trim();
+          const dailyTravelTime = Math.round(driveDuration * 2) + " mins";
+          const dailyDistance = (driveDistance * 2).toFixed(2) + " " + driveDistanceText.replace(/[0-9.]/g, "").trim();
 
           autoSection.innerHTML = `
             <h4>Auto</h4>
@@ -198,8 +231,7 @@ async function calculateTravelTime(block) {
             <p>Auto Reisezeit am Tag: ${dailyTravelTime}</p>
             <p>Auto Reise in km am Tag: ${dailyDistance}</p>
           `;
-          
-          // Request for transit data to update ÖV section
+
           const transitServiceForOV = new google.maps.DirectionsService();
           transitServiceForOV.route(
             {
@@ -218,16 +250,17 @@ async function calculateTravelTime(block) {
                 const ovDuration = ovDurationMatch ? parseFloat(ovDurationMatch[0]) : 0;
                 const ovDistance = ovDistanceMatch ? parseFloat(ovDistanceMatch[0]) : 0;
 
-                const dailyOVTravelTime = (ovDuration * 2).toFixed(2) + " mins";
+                const dailyOVTravelTime = (ovDuration * 2).toFixed(0) + " mins";
                 const dailyOVDistance = (ovDistance * 2).toFixed(2) + " " + ovDistanceText.replace(/[0-9.]/g, "").trim();
 
-                ovSection.innerHTML = `
-                  <h4>ÖV</h4>
-                  <p>ÖV Reisezeit: ${ovDurationText}</p>
-                  <p>ÖV Reise in km: ${ovDistanceText}</p>
-                  <p>ÖV Reisezeit am Tag: ${dailyOVTravelTime}</p>
-                  <p>ÖV Reise in km am Tag: ${dailyOVDistance}</p>
-                `;
+                // Update ÖV section details
+                const ovParagraphs = ovSection.querySelectorAll('p');
+                if(ovParagraphs.length >= 8) {
+                  ovParagraphs[0].textContent = `ÖV Reisezeit: ${ovDurationText}`;
+                  ovParagraphs[1].textContent = `ÖV Reise in km: ${ovDistanceText}`;
+                  ovParagraphs[2].textContent = `ÖV Reisezeit am Tag: ${dailyOVTravelTime}`;
+                  ovParagraphs[3].textContent = `ÖV Reise in km am Tag: ${dailyOVDistance}`;
+                }
               } else {
                 console.error("ÖV route request failed: " + ovStatus);
               }
@@ -245,10 +278,10 @@ async function calculateTravelTime(block) {
               if (transitStatus === "OK") {
                 const transitLeg = transitResponse.routes[0].legs[0];
                 const transitDurationSec = transitLeg.duration.value;
-                transitDurationMinutes = Math.round(transitDurationSec / 60);
+                const transitDurationMinutes = Math.round(transitDurationSec / 60);
 
                 const differenceMinutes = transitDurationMinutes - carDurationMinutes;
-                const threshold = 15; // Set your threshold here
+                const threshold = 15;
                 const diffElement = block.querySelector('.difference');
                 if (diffElement) {
                   if(differenceMinutes > threshold) {
@@ -292,12 +325,14 @@ async function calculateTravelTime(block) {
             <p>Warten: ${transitDetailsStart.waitingTime}</p>
             <p>Reisezeit + Warten: ${transitDetailsStart.travelPlusWaiting}</p>
           `;
+          const ovParagraphs = ovSection.querySelectorAll('p');
+          if(ovParagraphs.length >= 8) {
+            ovParagraphs[4].textContent = `Anfahrt + Wartezeit (Arbeitsbeginn): ${transitDetailsStart.travelPlusWaiting}`;
+          }
         } else {
-          console.error(
-            "Transit route request failed (Start): " + transitStatusStart,
-          );
+          console.error("Transit route request failed (Start): " + transitStatusStart);
         }
-      },
+      }
     );
 
     const departureTimeEnd = new Date();
@@ -324,12 +359,30 @@ async function calculateTravelTime(block) {
             <p>Warten: ${transitDetailsEnd.waitingTime}</p>
             <p>Reisezeit + Warten: ${transitDetailsEnd.travelPlusWaiting}</p>
           `;
+          const ovParagraphs = ovSection.querySelectorAll('p');
+          if(ovParagraphs.length >= 8) {
+            ovParagraphs[5].textContent = `Rückfahrt + Wartezeit (Arbeitsende): ${transitDetailsEnd.travelPlusWaiting}`;
+            
+            // Calculate Gesamte ÖV-Zeit + Wartezeit am Tag and ÖV vs. Auto
+            const anfahrtText = ovParagraphs[4].textContent.match(/(\d+)/)?.[0] || "0";
+            const rueckfahrtText = ovParagraphs[5].textContent.match(/(\d+)/)?.[0] || "0";
+            
+            const anfahrtMinutes = parseInt(anfahrtText);
+            const rueckfahrtMinutes = parseInt(rueckfahrtText);
+            const gesamteOV = anfahrtMinutes + rueckfahrtMinutes;
+            ovParagraphs[6].textContent = `Gesamte ÖV-Zeit + Wartezeit am Tag: ${gesamteOV} mins`;
+
+            const autoZeitText = block.querySelector('.auto-section p:nth-of-type(3)')?.textContent || "";
+            const autoZeitMatch = autoZeitText.match(/(\d+)/);
+            const autoZeit = autoZeitMatch ? parseInt(autoZeitMatch[0]) : 0;
+
+            const zeitunterschied = gesamteOV - autoZeit;
+            ovParagraphs[7].textContent = `ÖV vs. Auto: Zeitunterschied: ${zeitunterschied} mins`;
+          }
         } else {
-          console.error(
-            "Transit route request failed (End): " + transitStatusEnd,
-          );
+          console.error("Transit route request failed (End): " + transitStatusEnd);
         }
-      },
+      }
     );
 
     const mapContainer = block.querySelector(".map");
@@ -346,36 +399,42 @@ async function calculateTravelTime(block) {
 
 function setupCalculationBlock(block) {
   const homeAddressInput = block.querySelector(".homeAddress");
-  initializeAutocomplete(homeAddressInput);
+  if(homeAddressInput) initializeAutocomplete(homeAddressInput);
 
   const employerAddressInput = block.querySelector(".employerAddress");
   if (employerAddressInput) {
     initializeAutocomplete(employerAddressInput);
   }
 
+  const startTimeInput = block.querySelector(".startTime");
+  const endTimeInput = block.querySelector(".endTime");
+  if(startTimeInput) startTimeInput.value = "07:30";
+  if(endTimeInput) endTimeInput.value = "17:30";
+
+  if(document.querySelectorAll(".calculation-block").length === 1) {
+    const startDateInput = block.querySelector(".start-date");
+    const endDateInput = block.querySelector(".end-date");
+    const currentYear = new Date().getFullYear();
+    const lastYear = currentYear - 1;
+    if(startDateInput) startDateInput.value = `${lastYear}-01-01`;
+    if(endDateInput) endDateInput.value = `${lastYear}-12-31`;
+  }
+
   const mapContainer = block.querySelector(".map");
   initializeMap(mapContainer);
 
   const calculateBtn = block.querySelector(".calculate-button");
-  // Remove any existing event listeners to avoid duplication
   calculateBtn.replaceWith(calculateBtn.cloneNode(true));
   block.querySelector(".calculate-button").addEventListener("click", () => {
     calculateTravelTime(block);
   });
 }
 
-document.querySelectorAll(".calculation-block").forEach((block) => {
-  setupCalculationBlock(block);
-});
-
-// Maintain array of calculation blocks and current page index
 const calculationBlocks = [];
 let currentPageIndex = 0;
 
 function showBlock(index) {
-  // Hide all blocks first
   calculationBlocks.forEach((block, i) => {
-    // Use empty string to reset to default CSS display
     block.style.display = i === index ? '' : 'none';
   });
   currentPageIndex = index;
@@ -383,10 +442,8 @@ function showBlock(index) {
 
 function updatePagination() {
   const paginationDiv = document.querySelector('.pagination');
-  // Clear existing pagination links
   paginationDiv.innerHTML = '';
 
-  // Create pagination buttons based on calculationBlocks length
   calculationBlocks.forEach((_, index) => {
     const pageBtn = document.createElement('button');
     pageBtn.textContent = index + 1;
@@ -396,7 +453,7 @@ function updatePagination() {
     }
     pageBtn.addEventListener('click', () => {
       showBlock(index);
-      updatePagination(); // update active state
+      updatePagination();
     });
     paginationDiv.appendChild(pageBtn);
   });
@@ -407,19 +464,23 @@ document.querySelectorAll(".calculation-block").forEach((block) => {
   setupCalculationBlock(block);
 });
 
-// Ensure only the first block is visible initially
 if(calculationBlocks.length > 0) {
   showBlock(0);
 }
 
-// "Add More" Button functionality 
 document.querySelector('.add-button').addEventListener('click', () => {
   const mainContainer = document.getElementById('main-container');
   const newBlock = document.querySelector('.calculation-block').cloneNode(true);
 
   newBlock.querySelectorAll('input').forEach((input) => {
     if (input.type === 'text' || input.type === 'time' || input.type === 'date') {
-      input.value = ''; 
+      if(input.classList.contains('startTime')) {
+        input.value = "07:30";
+      } else if(input.classList.contains('endTime')) {
+        input.value = "17:30";
+      } else {
+        input.value = '';
+      }
     }
   });
 
@@ -451,6 +512,10 @@ document.querySelector('.add-button').addEventListener('click', () => {
       <p>ÖV Reise in km: -- km</p>
       <p>ÖV Reisezeit am Tag: -- Minuten</p>
       <p>ÖV Reise in km am Tag: -- km</p>
+      <p>Anfahrt + Wartezeit (Arbeitsbeginn): -- Minuten</p>
+      <p>Rückfahrt + Wartezeit (Arbeitsende): -- Minuten</p>
+      <p>Gesamte ÖV-Zeit + Wartezeit am Tag: -- Minuten</p>
+      <p>ÖV vs. Auto: Zeitunterschied: -- Minuten</p>
     </div>
     <div class="arbeitsbeginn-section">
       <h4>ÖV Zeiten Arbeitsbeginn</h4>
@@ -471,7 +536,6 @@ document.querySelector('.add-button').addEventListener('click', () => {
   `;
 
   mainContainer.insertBefore(newBlock, document.querySelector('.pagination-container'));
-
   setupCalculationBlock(newBlock);
   calculationBlocks.push(newBlock);
 
