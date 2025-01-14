@@ -18,6 +18,13 @@ function getNextValidMonday() {
   return date.toISOString().split('T')[0];
 }
 
+// New function to get the date exactly one month from today
+function getDateOneMonthLater() {
+  let date = new Date();
+  date.setMonth(date.getMonth() + 1);
+  return date.toISOString().split('T')[0];
+}
+
 function initializeAutocomplete(inputElement) {
   new google.maps.places.Autocomplete(inputElement);
 }
@@ -119,7 +126,8 @@ function extractTransitDetails(legs) {
 document.addEventListener('DOMContentLoaded', () => {
   const globalDateInput = document.getElementById('globalDate');
   if(globalDateInput) {
-    globalDateInput.value = getNextValidMonday();
+    // Set the global date input to exactly one month from today
+    globalDateInput.value = getDateOneMonthLater();
   }
 });
 
@@ -181,13 +189,9 @@ async function calculateTravelTime(block) {
     arbeitsendeSection.className = 'arbeitsende-section';
     detailsDiv.appendChild(arbeitsendeSection);
 
-    // Initialize ÖV section placeholders
+    // Initialize ÖV section with only the required four paragraphs
     ovSection.innerHTML = `
       <h4>ÖV</h4>
-      <p>ÖV Reisezeit: -- Minuten</p>
-      <p>ÖV Reise in km: -- km</p>
-      <p>ÖV Reisezeit am Tag: -- Minuten</p>
-      <p>ÖV Reise in km am Tag: -- km</p>
       <p>Anfahrt + Wartezeit (Arbeitsbeginn): -- Minuten</p>
       <p>Rückfahrt + Wartezeit (Arbeitsende): -- Minuten</p>
       <p>Gesamte ÖV-Zeit + Wartezeit am Tag: -- Minuten</p>
@@ -242,25 +246,7 @@ async function calculateTravelTime(block) {
             (ovResponse, ovStatus) => {
               if (ovStatus === "OK") {
                 const ovLeg = ovResponse.routes[0].legs[0];
-                const ovDurationText = ovLeg.duration.text;
-                const ovDistanceText = ovLeg.distance.text;
-
-                const ovDurationMatch = ovDurationText.match(/(\d+(\.\d+)?)/);
-                const ovDistanceMatch = ovDistanceText.match(/(\d+(\.\d+)?)/);
-                const ovDuration = ovDurationMatch ? parseFloat(ovDurationMatch[0]) : 0;
-                const ovDistance = ovDistanceMatch ? parseFloat(ovDistanceMatch[0]) : 0;
-
-                const dailyOVTravelTime = (ovDuration * 2).toFixed(0) + " mins";
-                const dailyOVDistance = (ovDistance * 2).toFixed(2) + " " + ovDistanceText.replace(/[0-9.]/g, "").trim();
-
-                // Update ÖV section details
-                const ovParagraphs = ovSection.querySelectorAll('p');
-                if(ovParagraphs.length >= 8) {
-                  ovParagraphs[0].textContent = `ÖV Reisezeit: ${ovDurationText}`;
-                  ovParagraphs[1].textContent = `ÖV Reise in km: ${ovDistanceText}`;
-                  ovParagraphs[2].textContent = `ÖV Reisezeit am Tag: ${dailyOVTravelTime}`;
-                  ovParagraphs[3].textContent = `ÖV Reise in km am Tag: ${dailyOVDistance}`;
-                }
+                // Since we are only showing four lines, we do not update additional details here.
               } else {
                 console.error("ÖV route request failed: " + ovStatus);
               }
@@ -326,8 +312,8 @@ async function calculateTravelTime(block) {
             <p>Reisezeit + Warten: ${transitDetailsStart.travelPlusWaiting}</p>
           `;
           const ovParagraphs = ovSection.querySelectorAll('p');
-          if(ovParagraphs.length >= 8) {
-            ovParagraphs[4].textContent = `Anfahrt + Wartezeit (Arbeitsbeginn): ${transitDetailsStart.travelPlusWaiting}`;
+          if(ovParagraphs.length >= 4) {
+            ovParagraphs[0].textContent = `Anfahrt + Wartezeit (Arbeitsbeginn): ${transitDetailsStart.travelPlusWaiting}`;
           }
         } else {
           console.error("Transit route request failed (Start): " + transitStatusStart);
@@ -360,24 +346,24 @@ async function calculateTravelTime(block) {
             <p>Reisezeit + Warten: ${transitDetailsEnd.travelPlusWaiting}</p>
           `;
           const ovParagraphs = ovSection.querySelectorAll('p');
-          if(ovParagraphs.length >= 8) {
-            ovParagraphs[5].textContent = `Rückfahrt + Wartezeit (Arbeitsende): ${transitDetailsEnd.travelPlusWaiting}`;
+          if(ovParagraphs.length >= 4) {
+            ovParagraphs[1].textContent = `Rückfahrt + Wartezeit (Arbeitsende): ${transitDetailsEnd.travelPlusWaiting}`;
             
             // Calculate Gesamte ÖV-Zeit + Wartezeit am Tag and ÖV vs. Auto
-            const anfahrtText = ovParagraphs[4].textContent.match(/(\d+)/)?.[0] || "0";
-            const rueckfahrtText = ovParagraphs[5].textContent.match(/(\d+)/)?.[0] || "0";
+            const anfahrtText = ovParagraphs[0].textContent.match(/(\d+)/)?.[0] || "0";
+            const rueckfahrtText = ovParagraphs[1].textContent.match(/(\d+)/)?.[0] || "0";
             
             const anfahrtMinutes = parseInt(anfahrtText);
             const rueckfahrtMinutes = parseInt(rueckfahrtText);
             const gesamteOV = anfahrtMinutes + rueckfahrtMinutes;
-            ovParagraphs[6].textContent = `Gesamte ÖV-Zeit + Wartezeit am Tag: ${gesamteOV} mins`;
+            ovParagraphs[2].textContent = `Gesamte ÖV-Zeit + Wartezeit am Tag: ${gesamteOV} mins`;
 
             const autoZeitText = block.querySelector('.auto-section p:nth-of-type(3)')?.textContent || "";
             const autoZeitMatch = autoZeitText.match(/(\d+)/);
             const autoZeit = autoZeitMatch ? parseInt(autoZeitMatch[0]) : 0;
 
             const zeitunterschied = gesamteOV - autoZeit;
-            ovParagraphs[7].textContent = `ÖV vs. Auto: Zeitunterschied: ${zeitunterschied} mins`;
+            ovParagraphs[3].textContent = `ÖV vs. Auto: Zeitunterschied: ${zeitunterschied} mins`;
           }
         } else {
           console.error("Transit route request failed (End): " + transitStatusEnd);
@@ -508,10 +494,6 @@ document.querySelector('.add-button').addEventListener('click', () => {
     </div>
     <div class="ov-section">
       <h4>ÖV</h4>
-      <p>ÖV Reisezeit: -- Minuten</p>
-      <p>ÖV Reise in km: -- km</p>
-      <p>ÖV Reisezeit am Tag: -- Minuten</p>
-      <p>ÖV Reise in km am Tag: -- km</p>
       <p>Anfahrt + Wartezeit (Arbeitsbeginn): -- Minuten</p>
       <p>Rückfahrt + Wartezeit (Arbeitsende): -- Minuten</p>
       <p>Gesamte ÖV-Zeit + Wartezeit am Tag: -- Minuten</p>
