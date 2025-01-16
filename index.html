@@ -11,6 +11,18 @@
     />
     <!-- Load Google Maps API with Places library -->
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB7VoqLBiyz1woT5ZTcR25mJisFaLOcUVo&libraries=places"></script>
+    <style>
+      /* Simple styles for feedback colors */
+      .green {
+        color: green;
+      }
+      .orange {
+        color: orange;
+      }
+      .red {
+        color: red;
+      }
+    </style>
   </head>
 
   <body>
@@ -61,9 +73,11 @@
 
         <div class="result-section">
           <div class="results">
-            <!-- Default results -->
+            <!-- Updated result paragraphs -->
             <div>
-              <p><strong>Abzug:</strong> Der Abzug ist möglich.</p>
+              <p class="abzug">
+                <strong>Abzug:</strong> Der Abzug ist möglich.
+              </p>
               <p class="difference"></p>
             </div>
             <div>

@@ -18,7 +18,6 @@ function getNextValidMonday() {
   return date.toISOString().split('T')[0];
 }
 
-// New function to get the date exactly one month from today
 function getDateOneMonthLater() {
   let date = new Date();
   date.setMonth(date.getMonth() + 1);
@@ -126,7 +125,6 @@ function extractTransitDetails(legs) {
 document.addEventListener('DOMContentLoaded', () => {
   const globalDateInput = document.getElementById('globalDate');
   if(globalDateInput) {
-    // Set the global date input to exactly one month from today
     globalDateInput.value = getDateOneMonthLater();
   }
 });
@@ -134,9 +132,6 @@ document.addEventListener('DOMContentLoaded', () => {
 async function calculateTravelTime(block) {
   const detailsDiv = block.querySelector(".details");
   detailsDiv.innerHTML = ""; 
-
-  const employerNameInput = block.querySelector('.employerName');
-  if(employerNameInput) employerNameInput.value = '';
 
   const startDateElement = block.querySelector('.start-date');
   const endDateElement = block.querySelector('.end-date');
@@ -189,7 +184,6 @@ async function calculateTravelTime(block) {
     arbeitsendeSection.className = 'arbeitsende-section';
     detailsDiv.appendChild(arbeitsendeSection);
 
-    // Initialize ÖV section with only the required four paragraphs
     ovSection.innerHTML = `
       <h4>ÖV</h4>
       <p>Anfahrt + Wartezeit (Arbeitsbeginn): -- Minuten</p>
@@ -245,8 +239,7 @@ async function calculateTravelTime(block) {
             },
             (ovResponse, ovStatus) => {
               if (ovStatus === "OK") {
-                const ovLeg = ovResponse.routes[0].legs[0];
-                // Since we are only showing four lines, we do not update additional details here.
+                // Not updating additional details as only four lines are shown.
               } else {
                 console.error("ÖV route request failed: " + ovStatus);
               }
@@ -267,13 +260,21 @@ async function calculateTravelTime(block) {
                 const transitDurationMinutes = Math.round(transitDurationSec / 60);
 
                 const differenceMinutes = transitDurationMinutes - carDurationMinutes;
-                const threshold = 15;
                 const diffElement = block.querySelector('.difference');
-                if (diffElement) {
-                  if(differenceMinutes > threshold) {
-                    diffElement.textContent = `Weil die Dauer des ÖV um ${differenceMinutes} min länger ist.`;
+                const abzugElement = block.querySelector('.abzug');
+                if (diffElement && abzugElement) {
+                  if(differenceMinutes > 90){
+                    abzugElement.innerHTML = "<strong>Abzug:</strong> Ist möglich.";
+                    diffElement.style.color = "green";
+                    diffElement.textContent = `Weil die Dauer des ÖV um ${differenceMinutes} min länger dauert.`;
+                  } else if(differenceMinutes > 60){
+                    abzugElement.innerHTML = "<strong>Abzug:</strong> Ist wahrscheinlich möglich.";
+                    diffElement.style.color = "orange";
+                    diffElement.textContent = `Weil die Dauer des ÖV um ${differenceMinutes} min länger dauert.`;
                   } else {
-                    diffElement.textContent = `Die Dauer des ÖV ist nur um ${differenceMinutes} min länger`;
+                    abzugElement.innerHTML = "<strong>Abzug:</strong> Ist nicht möglich.";
+                    diffElement.style.color = "red";
+                    diffElement.textContent = `Weil die Dauer des ÖV nur um ${differenceMinutes} min länger dauert.`;
                   }
                 }
               } else {
@@ -303,17 +304,55 @@ async function calculateTravelTime(block) {
         if (transitStatusStart === "OK") {
           const legsStart = transitResponseStart.routes[0].legs;
           const transitDetailsStart = extractTransitDetails(legsStart);
+          console.log("transitDetailsStart", transitDetailsStart);
+
+          // calculation for showing data in the frontend 
+          if (!legsStart || legsStart.length === 0) return null;
+
+          const leg = legsStart[0];
+          const departure = leg.departure_time 
+            ? new Date(leg.departure_time.value).toLocaleTimeString([], { 
+                  hour: '2-digit', minute:'2-digit', hour12: true 
+              }) 
+            : "--";
+          const arrival = leg.arrival_time 
+            ? new Date(leg.arrival_time.value).toLocaleTimeString([], { 
+                  hour: '2-digit', minute:'2-digit', hour12: true 
+              }) 
+            : "--";
+        
+          const travelSeconds = leg.duration ? leg.duration.value : 0;
+          const travelMinutes = Math.round(travelSeconds / 60);
+          const travelTime = travelMinutes + " mins";
+        
+          let totalDuration = leg.duration ? leg.duration.value : 0;
+          let sumTransitDuration = 0;
+          if (leg.steps) {
+            leg.steps.forEach((step) => {
+              if (step.travel_mode === "TRANSIT") {
+                sumTransitDuration += step.duration ? step.duration.value : 0;
+              }
+            });
+          }
+          let waitingSeconds = totalDuration - sumTransitDuration;
+          let waitingMinutes = waitingSeconds > 0 ? Math.round(waitingSeconds / 60) : 0;
+          const waitingTime = waitingMinutes + " mins";
+        
+          let totalMinutes = travelMinutes + waitingMinutes;
+          const travelPlusWaiting = totalMinutes + " mins";
+
+
           arbeitsbeginnSection.innerHTML = `
             <h4>ÖV Zeiten Arbeitsbeginn</h4>
-            <p>Abreise: ${transitDetailsStart.departure}</p>
-            <p>Ankunft: ${transitDetailsStart.arrival}</p>
-            <p>Reisezeit: ${transitDetailsStart.travelTime}</p>
-            <p>Warten: ${transitDetailsStart.waitingTime}</p>
-            <p>Reisezeit + Warten: ${transitDetailsStart.travelPlusWaiting}</p>
+            <p>Abreise: ${departure}</p>
+            <p>Ankunft: ${arrival}</p>
+            <p>Reisezeit: ${travelTime}</p>
+            <p>Warten: ${waitingTime}</p>
+            <p>Reisezeit + Warten: ${travelPlusWaiting}</p>
           `;
           const ovParagraphs = ovSection.querySelectorAll('p');
           if(ovParagraphs.length >= 4) {
-            ovParagraphs[0].textContent = `Anfahrt + Wartezeit (Arbeitsbeginn): ${transitDetailsStart.travelPlusWaiting}`;
+            ovParagraphs[0].textContent = `Anfahrt + Wartezeit (Arbeitsbeginn): ${travelPlusWaiting}`;
           }
         } else {
           console.error("Transit route request failed (Start): " + transitStatusStart);
@@ -337,19 +376,54 @@ async function calculateTravelTime(block) {
         if (transitStatusEnd === "OK") {
           const legsEnd = transitResponseEnd.routes[0].legs;
           const transitDetailsEnd = extractTransitDetails(legsEnd);
+          console.log("transitDetailsEnd", transitDetailsEnd);
+          if (!legsEnd || legsEnd.length === 0) return details;
+
+  const leg = legsEnd[0];
+  const departure = leg.departure_time 
+    ? new Date(leg.departure_time.value).toLocaleTimeString([], { 
+          hour: '2-digit', minute:'2-digit', hour12: true 
+      }) 
+    : "--";
+  const arrival = leg.arrival_time 
+    ? new Date(leg.arrival_time.value).toLocaleTimeString([], { 
+          hour: '2-digit', minute:'2-digit', hour12: true 
+      }) 
+    : "--";
+
+  const travelSeconds = leg.duration ? leg.duration.value : 0;
+  const travelMinutes = Math.round(travelSeconds / 60);
+  const travelTime = travelMinutes + " mins";
+
+  let totalDuration = leg.duration ? leg.duration.value : 0;
+  let sumTransitDuration = 0;
+  if (leg.steps) {
+    leg.steps.forEach((step) => {
+      if (step.travel_mode === "TRANSIT") {
+        sumTransitDuration += step.duration ? step.duration.value : 0;
+      }
+    });
+  }
+  let waitingSeconds = totalDuration - sumTransitDuration;
+  let waitingMinutes = waitingSeconds > 0 ? Math.round(waitingSeconds / 60) : 0;
+  const waitingTime = waitingMinutes + " mins";
+
+  let totalMinutes = travelMinutes + waitingMinutes;
+  const travelPlusWaiting = totalMinutes + " mins";
+
+
           arbeitsendeSection.innerHTML = `
             <h4>ÖV Zeiten Arbeitsende</h4>
-            <p>Abreise: ${transitDetailsEnd.departure}</p>
-            <p>Ankunft: ${transitDetailsEnd.arrival}</p>
-            <p>Reisezeit: ${transitDetailsEnd.travelTime}</p>
-            <p>Warten: ${transitDetailsEnd.waitingTime}</p>
-            <p>Reisezeit + Warten: ${transitDetailsEnd.travelPlusWaiting}</p>
+            <p>Abreise: ${departure}</p>
+            <p>Ankunft: ${arrival}</p>
+            <p>Reisezeit: ${travelTime}</p>
+            <p>Warten: ${waitingTime}</p>
+            <p>Reisezeit + Warten: ${travelPlusWaiting} end time</p>
           `;
           const ovParagraphs = ovSection.querySelectorAll('p');
           if(ovParagraphs.length >= 4) {
             ovParagraphs[1].textContent = `Rückfahrt + Wartezeit (Arbeitsende): ${transitDetailsEnd.travelPlusWaiting}`;
             
-            // Calculate Gesamte ÖV-Zeit + Wartezeit am Tag and ÖV vs. Auto
             const anfahrtText = ovParagraphs[0].textContent.match(/(\d+)/)?.[0] || "0";
             const rueckfahrtText = ovParagraphs[1].textContent.match(/(\d+)/)?.[0] || "0";
             
@@ -475,7 +549,7 @@ document.querySelector('.add-button').addEventListener('click', () => {
 
   resultsDiv.innerHTML = `
     <div>
-      <p><strong>Abzug:</strong> Der Abzug ist möglich.</p>
+      <p class="abzug"><strong>Abzug:</strong> Der Abzug ist möglich.</p>
       <p class="difference"></p>
     </div>
     <div>
