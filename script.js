@@ -1,11 +1,27 @@
 const holidays = [
-  '2023-01-02', '2023-04-10', '2023-05-01', '2023-05-29', '2023-09-18', '2023-12-25',
-  '2024-01-01', '2024-01-02', '2024-04-01', '2024-04-08', '2024-05-20', '2024-09-16', '2024-12-25',
-  '2025-01-01', '2025-01-02', '2025-04-21', '2025-06-09', '2025-09-15', '2025-12-08'
+  "2023-01-02",
+  "2023-04-10",
+  "2023-05-01",
+  "2023-05-29",
+  "2023-09-18",
+  "2023-12-25",
+  "2024-01-01",
+  "2024-01-02",
+  "2024-04-01",
+  "2024-04-08",
+  "2024-05-20",
+  "2024-09-16",
+  "2024-12-25",
+  "2025-01-01",
+  "2025-01-02",
+  "2025-04-21",
+  "2025-06-09",
+  "2025-09-15",
+  "2025-12-08",
 ];
 
 function isSwissHoliday(date) {
-  const formattedDate = date.toISOString().split('T')[0];
+  const formattedDate = date.toISOString().split("T")[0];
   return holidays.includes(formattedDate);
 }
 
@@ -15,13 +31,13 @@ function getNextValidMonday() {
   while (date.getDay() !== 1 || isSwissHoliday(date)) {
     date.setDate(date.getDate() + 1);
   }
-  return date.toISOString().split('T')[0];
+  return date.toISOString().split("T")[0];
 }
 
 function getDateOneMonthLater() {
   let date = new Date();
   date.setMonth(date.getMonth() + 1);
-  return date.toISOString().split('T')[0];
+  return date.toISOString().split("T")[0];
 }
 
 function initializeAutocomplete(inputElement) {
@@ -32,7 +48,7 @@ function initializeMap(
   mapContainer,
   source = { lat: 47.3769, lng: 8.5417 },
   destination = null,
-  travelMode = google.maps.TravelMode.DRIVING,
+  travelMode = google.maps.TravelMode.DRIVING
 ) {
   const map = new google.maps.Map(mapContainer, {
     zoom: 14,
@@ -59,7 +75,7 @@ function initializeMap(
         } else {
           console.error("Directions request failed: " + status);
         }
-      },
+      }
     );
   }
 }
@@ -88,15 +104,19 @@ function extractTransitDetails(legs) {
   if (!legs || legs.length === 0) return details;
 
   const leg = legs[0];
-  details.departure = leg.departure_time 
-    ? new Date(leg.departure_time.value).toLocaleTimeString([], { 
-          hour: '2-digit', minute:'2-digit', hour12: true 
-      }) 
+  details.departure = leg.departure_time
+    ? new Date(leg.departure_time.value).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      })
     : "--";
-  details.arrival = leg.arrival_time 
-    ? new Date(leg.arrival_time.value).toLocaleTimeString([], { 
-          hour: '2-digit', minute:'2-digit', hour12: true 
-      }) 
+  details.arrival = leg.arrival_time
+    ? new Date(leg.arrival_time.value).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      })
     : "--";
 
   const travelSeconds = leg.duration ? leg.duration.value : 0;
@@ -122,38 +142,40 @@ function extractTransitDetails(legs) {
   return details;
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  const globalDateInput = document.getElementById('globalDate');
-  if(globalDateInput) {
+document.addEventListener("DOMContentLoaded", () => {
+  const globalDateInput = document.getElementById("globalDate");
+  if (globalDateInput) {
     globalDateInput.value = getDateOneMonthLater();
   }
 });
 
 async function calculateTravelTime(block) {
   const detailsDiv = block.querySelector(".details");
-  detailsDiv.innerHTML = ""; 
+  detailsDiv.innerHTML = "";
 
-  const startDateElement = block.querySelector('.start-date');
-  const endDateElement = block.querySelector('.end-date');
+  const startDateElement = block.querySelector(".start-date");
+  const endDateElement = block.querySelector(".end-date");
 
-  if(startDateElement && endDateElement) {
+  if (startDateElement && endDateElement) {
     const startDate = new Date(startDateElement.value);
     const endDate = new Date(endDateElement.value);
-    
-    if(isNaN(startDate) || isNaN(endDate) || startDate > endDate) {
+
+    if (isNaN(startDate) || isNaN(endDate) || startDate > endDate) {
       console.error("Invalid start or end date.");
     } else {
       const oneDay = 1000 * 60 * 60 * 24;
       const totalDays = Math.ceil((endDate - startDate) / oneDay) + 1;
       const daysInYear = 365;
-      
+
       const workdays220 = Math.round((totalDays / daysInYear) * 220);
       const workdays240 = Math.round((totalDays / daysInYear) * 240);
-      
-      const days220Elem = block.querySelector('.days-220');
-      const days240Elem = block.querySelector('.days-240');
-      if(days220Elem) days220Elem.innerHTML = `Bei 220d p.a.: <strong>${workdays220} Tage</strong>`;
-      if(days240Elem) days240Elem.innerHTML = `Bei 240d p.a.: <strong>${workdays240} Tage</strong>`;
+
+      const days220Elem = block.querySelector(".days-220");
+      const days240Elem = block.querySelector(".days-240");
+      if (days220Elem)
+        days220Elem.innerHTML = `Bei 220d p.a.: <strong>${workdays220} Tage</strong>`;
+      if (days240Elem)
+        days240Elem.innerHTML = `Bei 240d p.a.: <strong>${workdays240} Tage</strong>`;
     }
   }
 
@@ -168,20 +190,20 @@ async function calculateTravelTime(block) {
     const homeLocation = await geocodeAddress(homeAddress);
     const workLocation = await geocodeAddress(workAddress);
 
-    let autoSection = document.createElement('div');
-    autoSection.className = 'auto-section';
+    let autoSection = document.createElement("div");
+    autoSection.className = "auto-section";
     detailsDiv.appendChild(autoSection);
 
-    let ovSection = document.createElement('div');
-    ovSection.className = 'ov-section';
+    let ovSection = document.createElement("div");
+    ovSection.className = "ov-section";
     detailsDiv.appendChild(ovSection);
 
-    let arbeitsbeginnSection = document.createElement('div');
-    arbeitsbeginnSection.className = 'arbeitsbeginn-section';
+    let arbeitsbeginnSection = document.createElement("div");
+    arbeitsbeginnSection.className = "arbeitsbeginn-section";
     detailsDiv.appendChild(arbeitsbeginnSection);
 
-    let arbeitsendeSection = document.createElement('div');
-    arbeitsendeSection.className = 'arbeitsende-section';
+    let arbeitsendeSection = document.createElement("div");
+    arbeitsendeSection.className = "arbeitsende-section";
     detailsDiv.appendChild(arbeitsendeSection);
 
     ovSection.innerHTML = `
@@ -220,7 +242,10 @@ async function calculateTravelTime(block) {
             : 0;
 
           const dailyTravelTime = Math.round(driveDuration * 2) + " mins";
-          const dailyDistance = (driveDistance * 2).toFixed(2) + " " + driveDistanceText.replace(/[0-9.]/g, "").trim();
+          const dailyDistance =
+            (driveDistance * 2).toFixed(2) +
+            " " +
+            driveDistanceText.replace(/[0-9.]/g, "").trim();
 
           autoSection.innerHTML = `
             <h4>Auto</h4>
@@ -245,43 +270,6 @@ async function calculateTravelTime(block) {
               }
             }
           );
-
-          const transitService = new google.maps.DirectionsService();
-          transitService.route(
-            {
-              origin: homeAddress,
-              destination: workAddress,
-              travelMode: google.maps.TravelMode.TRANSIT,
-            },
-            (transitResponse, transitStatus) => {
-              if (transitStatus === "OK") {
-                const transitLeg = transitResponse.routes[0].legs[0];
-                const transitDurationSec = transitLeg.duration.value;
-                const transitDurationMinutes = Math.round(transitDurationSec / 60);
-
-                const differenceMinutes = transitDurationMinutes - carDurationMinutes;
-                const diffElement = block.querySelector('.difference');
-                const abzugElement = block.querySelector('.abzug');
-                if (diffElement && abzugElement) {
-                  if(differenceMinutes > 90){
-                    abzugElement.innerHTML = "<strong>Abzug:</strong> Ist möglich.";
-                    diffElement.style.color = "green";
-                    diffElement.textContent = `Weil die Dauer des ÖV um ${differenceMinutes} min länger dauert.`;
-                  } else if(differenceMinutes > 60){
-                    abzugElement.innerHTML = "<strong>Abzug:</strong> Ist wahrscheinlich möglich.";
-                    diffElement.style.color = "orange";
-                    diffElement.textContent = `Weil die Dauer des ÖV um ${differenceMinutes} min länger dauert.`;
-                  } else {
-                    abzugElement.innerHTML = "<strong>Abzug:</strong> Ist nicht möglich.";
-                    diffElement.style.color = "red";
-                    diffElement.textContent = `Weil die Dauer des ÖV nur um ${differenceMinutes} min länger dauert.`;
-                  }
-                }
-              } else {
-                console.error("Transit route request failed: " + transitStatus);
-              }
-            }
-          );
         } else {
           console.error("Driving route request failed: " + driveStatus);
         }
@@ -298,33 +286,28 @@ async function calculateTravelTime(block) {
         origin: homeAddress,
         destination: workAddress,
         travelMode: google.maps.TravelMode.TRANSIT,
-        transitOptions: { departureTime: departureTimeStart },
+        transitOptions: {
+          departureTime: departureTimeStart,
+        },
       },
       (transitResponseStart, transitStatusStart) => {
         if (transitStatusStart === "OK") {
           const legsStart = transitResponseStart.routes[0].legs;
+          console.log("Data comming from Google API", legsStart);
           const transitDetailsStart = extractTransitDetails(legsStart);
-          console.log("transitDetailsStart", transitDetailsStart);
 
-          // calculation for showing data in the frontend 
+          // calculation for showing data in the frontend
           if (!legsStart || legsStart.length === 0) return null;
 
           const leg = legsStart[0];
-          const departure = leg.departure_time 
-            ? new Date(leg.departure_time.value).toLocaleTimeString([], { 
-                  hour: '2-digit', minute:'2-digit', hour12: true 
-              }) 
-            : "--";
-          const arrival = leg.arrival_time 
-            ? new Date(leg.arrival_time.value).toLocaleTimeString([], { 
-                  hour: '2-digit', minute:'2-digit', hour12: true 
-              }) 
-            : "--";
-        
+          const departure = leg.departure_time.text;
+
+          const arrival = leg.arrival_time.text;
+
           const travelSeconds = leg.duration ? leg.duration.value : 0;
           const travelMinutes = Math.round(travelSeconds / 60);
           const travelTime = travelMinutes + " mins";
-        
+
           let totalDuration = leg.duration ? leg.duration.value : 0;
           let sumTransitDuration = 0;
           if (leg.steps) {
@@ -335,12 +318,12 @@ async function calculateTravelTime(block) {
             });
           }
           let waitingSeconds = totalDuration - sumTransitDuration;
-          let waitingMinutes = waitingSeconds > 0 ? Math.round(waitingSeconds / 60) : 0;
+          let waitingMinutes =
+            waitingSeconds > 0 ? Math.round(waitingSeconds / 60) : 0;
           const waitingTime = waitingMinutes + " mins";
-        
+
           let totalMinutes = travelMinutes + waitingMinutes;
           const travelPlusWaiting = totalMinutes + " mins";
-
 
           arbeitsbeginnSection.innerHTML = `
             <h4>ÖV Zeiten Arbeitsbeginn</h4>
@@ -350,12 +333,14 @@ async function calculateTravelTime(block) {
             <p>Warten: ${waitingTime}</p>
             <p>Reisezeit + Warten: ${travelPlusWaiting}</p>
           `;
-          const ovParagraphs = ovSection.querySelectorAll('p');
-          if(ovParagraphs.length >= 4) {
+          const ovParagraphs = ovSection.querySelectorAll("p");
+          if (ovParagraphs.length >= 4) {
             ovParagraphs[0].textContent = `Anfahrt + Wartezeit (Arbeitsbeginn): ${travelPlusWaiting}`;
           }
         } else {
-          console.error("Transit route request failed (Start): " + transitStatusStart);
+          console.error(
+            "Transit route request failed (Start): " + transitStatusStart
+          );
         }
       }
     );
@@ -376,41 +361,44 @@ async function calculateTravelTime(block) {
         if (transitStatusEnd === "OK") {
           const legsEnd = transitResponseEnd.routes[0].legs;
           const transitDetailsEnd = extractTransitDetails(legsEnd);
-          console.log("transitDetailsEnd", transitDetailsEnd);
-          if (!legsEnd || legsEnd.length === 0) return details;
+          if (!legsEnd || legsEnd.length === 0) return;
 
-  const leg = legsEnd[0];
-  const departure = leg.departure_time 
-    ? new Date(leg.departure_time.value).toLocaleTimeString([], { 
-          hour: '2-digit', minute:'2-digit', hour12: true 
-      }) 
-    : "--";
-  const arrival = leg.arrival_time 
-    ? new Date(leg.arrival_time.value).toLocaleTimeString([], { 
-          hour: '2-digit', minute:'2-digit', hour12: true 
-      }) 
-    : "--";
+          const leg = legsEnd[0];
+          const departure = leg.departure_time
+            ? new Date(leg.departure_time.value).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: true,
+              })
+            : "--";
+          const arrival = leg.arrival_time
+            ? new Date(leg.arrival_time.value).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: true,
+              })
+            : "--";
 
-  const travelSeconds = leg.duration ? leg.duration.value : 0;
-  const travelMinutes = Math.round(travelSeconds / 60);
-  const travelTime = travelMinutes + " mins";
+          const travelSeconds = leg.duration ? leg.duration.value : 0;
+          const travelMinutes = Math.round(travelSeconds / 60);
+          const travelTime = travelMinutes + " mins";
 
-  let totalDuration = leg.duration ? leg.duration.value : 0;
-  let sumTransitDuration = 0;
-  if (leg.steps) {
-    leg.steps.forEach((step) => {
-      if (step.travel_mode === "TRANSIT") {
-        sumTransitDuration += step.duration ? step.duration.value : 0;
-      }
-    });
-  }
-  let waitingSeconds = totalDuration - sumTransitDuration;
-  let waitingMinutes = waitingSeconds > 0 ? Math.round(waitingSeconds / 60) : 0;
-  const waitingTime = waitingMinutes + " mins";
+          let totalDuration = leg.duration ? leg.duration.value : 0;
+          let sumTransitDuration = 0;
+          if (leg.steps) {
+            leg.steps.forEach((step) => {
+              if (step.travel_mode === "TRANSIT") {
+                sumTransitDuration += step.duration ? step.duration.value : 0;
+              }
+            });
+          }
+          let waitingSeconds = totalDuration - sumTransitDuration;
+          let waitingMinutes =
+            waitingSeconds > 0 ? Math.round(waitingSeconds / 60) : 0;
+          const waitingTime = waitingMinutes + " mins";
 
-  let totalMinutes = travelMinutes + waitingMinutes;
-  const travelPlusWaiting = totalMinutes + " mins";
-
+          let totalMinutes = travelMinutes + waitingMinutes;
+          const travelPlusWaiting = totalMinutes + " mins";
 
           arbeitsendeSection.innerHTML = `
             <h4>ÖV Zeiten Arbeitsende</h4>
@@ -420,27 +408,53 @@ async function calculateTravelTime(block) {
             <p>Warten: ${waitingTime}</p>
             <p>Reisezeit + Warten: ${travelPlusWaiting} end time</p>
           `;
-          const ovParagraphs = ovSection.querySelectorAll('p');
-          if(ovParagraphs.length >= 4) {
+          const ovParagraphs = ovSection.querySelectorAll("p");
+          if (ovParagraphs.length >= 4) {
             ovParagraphs[1].textContent = `Rückfahrt + Wartezeit (Arbeitsende): ${transitDetailsEnd.travelPlusWaiting}`;
-            
-            const anfahrtText = ovParagraphs[0].textContent.match(/(\d+)/)?.[0] || "0";
-            const rueckfahrtText = ovParagraphs[1].textContent.match(/(\d+)/)?.[0] || "0";
-            
+
+            const anfahrtText =
+              ovParagraphs[0].textContent.match(/(\d+)/)?.[0] || "0";
+            const rueckfahrtText =
+              ovParagraphs[1].textContent.match(/(\d+)/)?.[0] || "0";
+
             const anfahrtMinutes = parseInt(anfahrtText);
             const rueckfahrtMinutes = parseInt(rueckfahrtText);
             const gesamteOV = anfahrtMinutes + rueckfahrtMinutes;
             ovParagraphs[2].textContent = `Gesamte ÖV-Zeit + Wartezeit am Tag: ${gesamteOV} mins`;
 
-            const autoZeitText = block.querySelector('.auto-section p:nth-of-type(3)')?.textContent || "";
+            const autoZeitText =
+              block.querySelector(".auto-section p:nth-of-type(3)")
+                ?.textContent || "";
             const autoZeitMatch = autoZeitText.match(/(\d+)/);
             const autoZeit = autoZeitMatch ? parseInt(autoZeitMatch[0]) : 0;
 
             const zeitunterschied = gesamteOV - autoZeit;
             ovParagraphs[3].textContent = `ÖV vs. Auto: Zeitunterschied: ${zeitunterschied} mins`;
+
+            const diffElement = block.querySelector(".difference");
+            const abzugElement = block.querySelector(".abzug");
+            if (diffElement && abzugElement) {
+              if (zeitunterschied > 90) {
+                abzugElement.innerHTML = "<strong>Abzug:</strong> Ist möglich.";
+                diffElement.style.color = "green";
+                diffElement.textContent = `Weil die Dauer des ÖV um ${zeitunterschied} min länger dauert.`;
+              } else if (zeitunterschied > 60) {
+                abzugElement.innerHTML =
+                  "<strong>Abzug:</strong> Ist wahrscheinlich möglich.";
+                diffElement.style.color = "orange";
+                diffElement.textContent = `Weil die Dauer des ÖV um ${zeitunterschied} min länger dauert.`;
+              } else {
+                abzugElement.innerHTML =
+                  "<strong>Abzug:</strong> Ist nicht möglich.";
+                diffElement.style.color = "red";
+                diffElement.textContent = `Weil die Dauer des ÖV nur um ${zeitunterschied} min länger dauert.`;
+              }
+            }
           }
         } else {
-          console.error("Transit route request failed (End): " + transitStatusEnd);
+          console.error(
+            "Transit route request failed (End): " + transitStatusEnd
+          );
         }
       }
     );
@@ -450,7 +464,7 @@ async function calculateTravelTime(block) {
       mapContainer,
       homeLocation,
       workLocation,
-      google.maps.TravelMode.DRIVING,
+      google.maps.TravelMode.DRIVING
     );
   } catch (error) {
     console.error("Error during calculation:", error);
@@ -459,7 +473,7 @@ async function calculateTravelTime(block) {
 
 function setupCalculationBlock(block) {
   const homeAddressInput = block.querySelector(".homeAddress");
-  if(homeAddressInput) initializeAutocomplete(homeAddressInput);
+  if (homeAddressInput) initializeAutocomplete(homeAddressInput);
 
   const employerAddressInput = block.querySelector(".employerAddress");
   if (employerAddressInput) {
@@ -468,16 +482,16 @@ function setupCalculationBlock(block) {
 
   const startTimeInput = block.querySelector(".startTime");
   const endTimeInput = block.querySelector(".endTime");
-  if(startTimeInput) startTimeInput.value = "07:30";
-  if(endTimeInput) endTimeInput.value = "17:30";
+  if (startTimeInput) startTimeInput.value = "07:30";
+  if (endTimeInput) endTimeInput.value = "17:30";
 
-  if(document.querySelectorAll(".calculation-block").length === 1) {
+  if (document.querySelectorAll(".calculation-block").length === 1) {
     const startDateInput = block.querySelector(".start-date");
     const endDateInput = block.querySelector(".end-date");
     const currentYear = new Date().getFullYear();
     const lastYear = currentYear - 1;
-    if(startDateInput) startDateInput.value = `${lastYear}-01-01`;
-    if(endDateInput) endDateInput.value = `${lastYear}-12-31`;
+    if (startDateInput) startDateInput.value = `${lastYear}-01-01`;
+    if (endDateInput) endDateInput.value = `${lastYear}-12-31`;
   }
 
   const mapContainer = block.querySelector(".map");
@@ -495,23 +509,23 @@ let currentPageIndex = 0;
 
 function showBlock(index) {
   calculationBlocks.forEach((block, i) => {
-    block.style.display = i === index ? '' : 'none';
+    block.style.display = i === index ? "" : "none";
   });
   currentPageIndex = index;
 }
 
 function updatePagination() {
-  const paginationDiv = document.querySelector('.pagination');
-  paginationDiv.innerHTML = '';
+  const paginationDiv = document.querySelector(".pagination");
+  paginationDiv.innerHTML = "";
 
   calculationBlocks.forEach((_, index) => {
-    const pageBtn = document.createElement('button');
+    const pageBtn = document.createElement("button");
     pageBtn.textContent = index + 1;
-    pageBtn.className = 'page-btn';
+    pageBtn.className = "page-btn";
     if (index === currentPageIndex) {
-      pageBtn.classList.add('active');
+      pageBtn.classList.add("active");
     }
-    pageBtn.addEventListener('click', () => {
+    pageBtn.addEventListener("click", () => {
       showBlock(index);
       updatePagination();
     });
@@ -524,28 +538,32 @@ document.querySelectorAll(".calculation-block").forEach((block) => {
   setupCalculationBlock(block);
 });
 
-if(calculationBlocks.length > 0) {
+if (calculationBlocks.length > 0) {
   showBlock(0);
 }
 
-document.querySelector('.add-button').addEventListener('click', () => {
-  const mainContainer = document.getElementById('main-container');
-  const newBlock = document.querySelector('.calculation-block').cloneNode(true);
+document.querySelector(".add-button").addEventListener("click", () => {
+  const mainContainer = document.getElementById("main-container");
+  const newBlock = document.querySelector(".calculation-block").cloneNode(true);
 
-  newBlock.querySelectorAll('input').forEach((input) => {
-    if (input.type === 'text' || input.type === 'time' || input.type === 'date') {
-      if(input.classList.contains('startTime')) {
+  newBlock.querySelectorAll("input").forEach((input) => {
+    if (
+      input.type === "text" ||
+      input.type === "time" ||
+      input.type === "date"
+    ) {
+      if (input.classList.contains("startTime")) {
         input.value = "07:30";
-      } else if(input.classList.contains('endTime')) {
+      } else if (input.classList.contains("endTime")) {
         input.value = "17:30";
       } else {
-        input.value = '';
+        input.value = "";
       }
     }
   });
 
-  const resultsDiv = newBlock.querySelector('.results');
-  const detailsDiv = newBlock.querySelector('.details');
+  const resultsDiv = newBlock.querySelector(".results");
+  const detailsDiv = newBlock.querySelector(".details");
 
   resultsDiv.innerHTML = `
     <div>
@@ -591,10 +609,15 @@ document.querySelector('.add-button').addEventListener('click', () => {
     </div>
   `;
 
-  mainContainer.insertBefore(newBlock, document.querySelector('.pagination-container'));
+  mainContainer.insertBefore(
+    newBlock,
+    document.querySelector(".pagination-container")
+  );
   setupCalculationBlock(newBlock);
   calculationBlocks.push(newBlock);
 
-  updatePagination();
+  // First, show the new block to update the currentPageIndex
   showBlock(calculationBlocks.length - 1);
+  // Then update pagination to reflect the new active page
+  updatePagination();
 });
