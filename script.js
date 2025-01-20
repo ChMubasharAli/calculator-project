@@ -25,6 +25,14 @@ function isSwissHoliday(date) {
   return holidays.includes(formattedDate);
 }
 
+function getDaysInYear(year) {
+  // A year is a leap year if it's divisible by 400 or (divisible by 4 but not by 100)
+  if (year % 400 === 0 || (year % 4 === 0 && year % 100 !== 0)) {
+    return 366;
+  }
+  return 365;
+}
+
 function getNextValidMonday() {
   let date = new Date();
   date.setMonth(date.getMonth() + 1);
@@ -38,6 +46,16 @@ function getDateOneMonthLater() {
   let date = new Date();
   date.setMonth(date.getMonth() + 1);
   return date.toISOString().split("T")[0];
+}
+
+// Helper function to format times in Central European Time (Zurich)
+function formatTimeInCET(date) {
+  return date.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+    timeZone: "Europe/Zurich", // Central European Time for Zurich
+  });
 }
 
 function initializeAutocomplete(inputElement) {
@@ -105,18 +123,10 @@ function extractTransitDetails(legs) {
 
   const leg = legs[0];
   details.departure = leg.departure_time
-    ? new Date(leg.departure_time.value).toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: true,
-      })
+    ? formatTimeInCET(new Date(leg.departure_time.value))
     : "--";
   details.arrival = leg.arrival_time
-    ? new Date(leg.arrival_time.value).toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: true,
-      })
+    ? formatTimeInCET(new Date(leg.arrival_time.value))
     : "--";
 
   const travelSeconds = leg.duration ? leg.duration.value : 0;
@@ -153,6 +163,31 @@ async function calculateTravelTime(block) {
   const detailsDiv = block.querySelector(".details");
   detailsDiv.innerHTML = "";
 
+  // Use the globalDate for holiday checks and year information
+  const globalDateInput = document.getElementById("globalDate");
+  let selectedDateStr = globalDateInput ? globalDateInput.value : null;
+  let selectedDate = selectedDateStr ? new Date(selectedDateStr) : new Date();
+
+  // If the selected global date is a holiday, switch to the next valid Monday
+  if (isSwissHoliday(selectedDate)) {
+    console.log(
+      "The selected global date is a holiday. Switching to the next valid Monday."
+    );
+    const nextMondayStr = getNextValidMonday();
+    selectedDate = new Date(nextMondayStr);
+    console.log("Next valid Monday:", nextMondayStr);
+    // Update the globalDate input field to reflect the new date
+    if (globalDateInput) {
+      globalDateInput.value = nextMondayStr;
+    }
+  } else {
+    console.log("The selected global date is not a holiday.");
+  }
+
+  // Determine days in year based on the (possibly adjusted) global date's year
+  const yearOfSelectedDate = selectedDate.getFullYear();
+  const daysInYearForSelectedDate = getDaysInYear(yearOfSelectedDate);
+
   const startDateElement = block.querySelector(".start-date");
   const endDateElement = block.querySelector(".end-date");
 
@@ -165,10 +200,14 @@ async function calculateTravelTime(block) {
     } else {
       const oneDay = 1000 * 60 * 60 * 24;
       const totalDays = Math.ceil((endDate - startDate) / oneDay) + 1;
-      const daysInYear = 365;
 
-      const workdays220 = Math.round((totalDays / daysInYear) * 220);
-      const workdays240 = Math.round((totalDays / daysInYear) * 240);
+      // Use dynamically determined days in year based on globalDate's year
+      const workdays220 = Math.round(
+        (totalDays / daysInYearForSelectedDate) * 220
+      );
+      const workdays240 = Math.round(
+        (totalDays / daysInYearForSelectedDate) * 240
+      );
 
       const days220Elem = block.querySelector(".days-220");
       const days240Elem = block.querySelector(".days-240");
@@ -301,7 +340,6 @@ async function calculateTravelTime(block) {
 
           const leg = legsStart[0];
           const departure = leg.departure_time.text;
-
           const arrival = leg.arrival_time.text;
 
           const travelSeconds = leg.duration ? leg.duration.value : 0;
@@ -369,6 +407,7 @@ async function calculateTravelTime(block) {
                 hour: "2-digit",
                 minute: "2-digit",
                 hour12: true,
+                timeZone: "Europe/Zurich",
               })
             : "--";
           const arrival = leg.arrival_time
@@ -376,6 +415,7 @@ async function calculateTravelTime(block) {
                 hour: "2-digit",
                 minute: "2-digit",
                 hour12: true,
+                timeZone: "Europe/Zurich",
               })
             : "--";
 
