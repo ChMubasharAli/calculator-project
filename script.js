@@ -1,4 +1,3 @@
-// List of Swiss public holidays in YYYY-MM-DD format over multiple years.
 const holidays = [
   "2023-01-02",
   "2023-04-10",
@@ -21,22 +20,12 @@ const holidays = [
   "2025-12-08",
 ];
 
-/**
- * Checks if a given date falls on a Swiss holiday.
- * @param {Date} date - The date to check.
- * @returns {boolean} True if the date is a holiday, false otherwise.
- */
 function isSwissHoliday(date) {
   // Format the date to YYYY-MM-DD to match the holidays array.
   const formattedDate = date.toISOString().split("T")[0];
   return holidays.includes(formattedDate);
 }
 
-/**
- * Returns the number of days in a given year, accounting for leap years.
- * @param {number} year - The year to check.
- * @returns {number} 366 for leap years, otherwise 365.
- */
 function getDaysInYear(year) {
   // A year is a leap year if it's divisible by 400 or (divisible by 4 but not by 100)
   if (year % 400 === 0 || (year % 4 === 0 && year % 100 !== 0)) {
@@ -45,10 +34,6 @@ function getDaysInYear(year) {
   return 365;
 }
 
-/**
- * Finds the next Monday that is not a Swiss holiday starting one month from now.
- * @returns {string} Date string in YYYY-MM-DD format for the next valid Monday.
- */
 function getNextValidMonday() {
   let date = new Date();
   // Move the date one month ahead.
@@ -57,48 +42,30 @@ function getNextValidMonday() {
   while (date.getDay() !== 1 || isSwissHoliday(date)) {
     date.setDate(date.getDate() + 1);
   }
-  // Return the found date in YYYY-MM-DD format.
   return date.toISOString().split("T")[0];
 }
 
-/**
- * Gets the date exactly one month from the current date.
- * @returns {string} Date string in YYYY-MM-DD format.
- */
 function getDateOneMonthLater() {
   let date = new Date();
   date.setMonth(date.getMonth() + 1);
   return date.toISOString().split("T")[0];
 }
 
-/**
- * Initializes Google Places Autocomplete on a given input element.
- * @param {HTMLElement} inputElement - Input element for address autocompletion.
- */
 function initializeAutocomplete(inputElement) {
   new google.maps.places.Autocomplete(inputElement);
 }
 
-/**
- * Initializes a Google Map centered on a source with an optional route to a destination.
- * @param {HTMLElement} mapContainer - DOM element to display the map.
- * @param {Object} source - Starting coordinates { lat, lng }.
- * @param {Object|null} destination - Destination coordinates { lat, lng } if route required.
- * @param {string} travelMode - Travel mode for directions (e.g., DRIVING).
- */
 function initializeMap(
   mapContainer,
   source = { lat: 47.3769, lng: 8.5417 },
   destination = null,
   travelMode = google.maps.TravelMode.DRIVING
 ) {
-  // Initialize map centered at the source with a default zoom level.
   const map = new google.maps.Map(mapContainer, {
     zoom: 14,
     center: source,
   });
 
-  // If a destination is provided, request and render directions.
   if (destination) {
     const directionsService = new google.maps.DirectionsService();
     const directionsRenderer = new google.maps.DirectionsRenderer({
@@ -113,7 +80,9 @@ function initializeMap(
         destination: destination,
         travelMode: travelMode,
         // Use current time as departureTime for transit services if needed.
-        transitOptions: { departureTime: new Date() },
+        transitOptions: {
+          departureTime: new Date(document.querySelector(".startTime").value),
+        },
       },
       (response, status) => {
         if (status === "OK") {
@@ -127,11 +96,6 @@ function initializeMap(
   }
 }
 
-/**
- * Geocodes an address into a location (latitude/longitude).
- * @param {string} address - The address to geocode.
- * @returns {Promise<Object>} Promise resolving with the location object or rejecting with an error.
- */
 function geocodeAddress(address) {
   return new Promise((resolve, reject) => {
     const geocoder = new google.maps.Geocoder();
@@ -146,11 +110,6 @@ function geocodeAddress(address) {
   });
 }
 
-/**
- * Extracts key transit details from route legs provided by Google Directions.
- * @param {Array} legs - Array of legs from a Google Directions response.
- * @returns {Object} An object containing departure, arrival, travelTime, waitingTime, and combined time.
- */
 function extractTransitDetails(legs) {
   // Initialize default details.
   const details = {
@@ -217,21 +176,15 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-/**
- * Calculates travel time and related data for a given calculation block.
- * @param {HTMLElement} block - The block element containing input and output fields.
- */
 async function calculateTravelTime(block) {
   // Clear previous details output.
   const detailsDiv = block.querySelector(".details");
   detailsDiv.innerHTML = "";
 
-  // Use the global date for holiday checks and year information.
   const globalDateInput = document.getElementById("globalDate");
   let selectedDateStr = globalDateInput ? globalDateInput.value : null;
   let selectedDate = selectedDateStr ? new Date(selectedDateStr) : new Date();
 
-  // If the selected global date is a holiday, switch to the next valid Monday.
   if (isSwissHoliday(selectedDate)) {
     console.log(
       "The selected global date is a holiday. Switching to the next valid Monday."
@@ -247,11 +200,9 @@ async function calculateTravelTime(block) {
     console.log("The selected global date is not a holiday.");
   }
 
-  // Determine days in year based on the (possibly adjusted) global date's year.
   const yearOfSelectedDate = selectedDate.getFullYear();
   const daysInYearForSelectedDate = getDaysInYear(yearOfSelectedDate);
 
-  // Retrieve start and end dates from the block.
   const startDateElement = block.querySelector(".start-date");
   const endDateElement = block.querySelector(".end-date");
 
@@ -259,15 +210,12 @@ async function calculateTravelTime(block) {
     const startDate = new Date(startDateElement.value);
     const endDate = new Date(endDateElement.value);
 
-    // Validate that start and end dates are correct.
     if (isNaN(startDate) || isNaN(endDate) || startDate > endDate) {
       console.error("Invalid start or end date.");
     } else {
-      const oneDay = 1000 * 60 * 60 * 24; // Milliseconds in one day.
-      // Calculate total number of days in the range, inclusive.
+      const oneDay = 1000 * 60 * 60 * 24;
       const totalDays = Math.ceil((endDate - startDate) / oneDay) + 1;
 
-      // Estimate workdays based on 220 and 240 working days per year scaled to totalDays.
       const workdays220 = Math.round(
         (totalDays / daysInYearForSelectedDate) * 220
       );
@@ -275,7 +223,6 @@ async function calculateTravelTime(block) {
         (totalDays / daysInYearForSelectedDate) * 240
       );
 
-      // Display computed workdays estimates in the corresponding elements.
       const days220Elem = block.querySelector(".days-220");
       const days240Elem = block.querySelector(".days-240");
       if (days220Elem)
@@ -285,7 +232,6 @@ async function calculateTravelTime(block) {
     }
   }
 
-  // Retrieve user inputs for addresses and work times.
   const homeAddress = block.querySelector(".homeAddress").value;
   const startWorkTime = block.querySelector(".startTime").value || "07:30";
   const endWorkTime = block.querySelector(".endTime").value || "17:30";
@@ -294,11 +240,9 @@ async function calculateTravelTime(block) {
     : "";
 
   try {
-    // Geocode the provided home and work addresses.
     const homeLocation = await geocodeAddress(homeAddress);
     const workLocation = await geocodeAddress(workAddress);
 
-    // Create and append sections to display auto and transit information.
     let autoSection = document.createElement("div");
     autoSection.className = "auto-section";
     detailsDiv.appendChild(autoSection);
@@ -315,7 +259,6 @@ async function calculateTravelTime(block) {
     arbeitsendeSection.className = "arbeitsende-section";
     detailsDiv.appendChild(arbeitsendeSection);
 
-    // Initialize ÖV (public transit) section with placeholder information.
     ovSection.innerHTML = `<h4>ÖV</h4>
       <p>Anfahrt + Wartezeit (Arbeitsbeginn): -- Minuten</p>
       <p>Rückfahrt + Wartezeit (Arbeitsende): -- Minuten</p>
@@ -325,7 +268,6 @@ async function calculateTravelTime(block) {
 
     let carDurationMinutes = 0;
 
-    // Request driving route between home and work.
     const directionsService = new google.maps.DirectionsService();
     directionsService.route(
       {
@@ -335,7 +277,6 @@ async function calculateTravelTime(block) {
       },
       (driveResponse, driveStatus) => {
         if (driveStatus === "OK") {
-          // Extract details of the driving route.
           const driveLeg = driveResponse.routes[0].legs[0];
           const driveDurationSec = driveLeg.duration.value;
           carDurationMinutes = Math.round(driveDurationSec / 60);
@@ -343,7 +284,6 @@ async function calculateTravelTime(block) {
           const driveDistanceText = driveLeg.distance.text;
           const driveDurationText = driveLeg.duration.text;
 
-          // Parse numeric values from distance and duration texts.
           const driveDurationMatch = driveDurationText.match(/(\d+(\.\d+)?)/);
           const driveDistanceMatch = driveDistanceText.match(/(\d+(\.\d+)?)/);
           const driveDuration = driveDurationMatch
@@ -353,14 +293,12 @@ async function calculateTravelTime(block) {
             ? parseFloat(driveDistanceMatch[0])
             : 0;
 
-          // Calculate daily round-trip travel times/distances.
           const dailyTravelTime = Math.round(driveDuration * 2) + " mins";
           const dailyDistance =
             (driveDistance * 2).toFixed(2) +
             " " +
             driveDistanceText.replace(/[0-9.]/g, "").trim();
 
-          // Update Auto section with calculated driving info.
           autoSection.innerHTML = `<h4>Auto</h4>
             <p>Auto Reisezeit: ${driveDurationText}</p>
             <p>Auto Reise in km: ${driveDistanceText}</p>
@@ -368,7 +306,6 @@ async function calculateTravelTime(block) {
             <p>Auto Reise in km am Tag: ${dailyDistance}</p>
             `;
 
-          // Prepare for public transit directions (ÖV) calculations but not fully used here.
           const transitServiceForOV = new google.maps.DirectionsService();
           transitServiceForOV.route(
             {
@@ -378,7 +315,6 @@ async function calculateTravelTime(block) {
             },
             (ovResponse, ovStatus) => {
               if (ovStatus === "OK") {
-                // Placeholder: Additional OV calculations can go here.
               } else {
                 console.error("ÖV route request failed: " + ovStatus);
               }
@@ -390,12 +326,12 @@ async function calculateTravelTime(block) {
       }
     );
 
-    // Set up departure time for commuting at start of work.
-    const departureTimeStart = new Date();
+    const departureTimeStart = new Date(
+      document.querySelector("#globalDate").value
+    );
     const [hoursStart, minutesStart] = startWorkTime.split(":").map(Number);
     departureTimeStart.setHours(hoursStart, minutesStart, 0, 0);
 
-    // Request transit route for the journey to work at start time.
     const transitServiceStart = new google.maps.DirectionsService();
     transitServiceStart.route(
       {
@@ -409,7 +345,7 @@ async function calculateTravelTime(block) {
       (transitResponseStart, transitStatusStart) => {
         if (transitStatusStart === "OK") {
           const legsStart = transitResponseStart.routes[0].legs;
-          console.log("Data comming from Google API", legsStart);
+          console.log("Data comming from Google API", transitResponseStart);
           const transitDetailsStart = extractTransitDetails(legsStart);
 
           // If no legs returned, exit early.
@@ -462,12 +398,14 @@ async function calculateTravelTime(block) {
       }
     );
 
-    // Set up departure time for commuting at end of work.
-    const departureTimeEnd = new Date();
+    const departureTimeEnd = new Date(
+      document.querySelector("#globalDate").value
+    );
     const [hoursEnd, minutesEnd] = endWorkTime.split(":").map(Number);
+    console.log("startWorkTime", startWorkTime);
+    console.log("endWorkTime", endWorkTime);
     departureTimeEnd.setHours(hoursEnd, minutesEnd, 0, 0);
 
-    // Request transit route for the journey home at end time.
     const transitServiceEnd = new google.maps.DirectionsService();
     transitServiceEnd.route(
       {
@@ -482,7 +420,6 @@ async function calculateTravelTime(block) {
           const transitDetailsEnd = extractTransitDetails(legsEnd);
           if (!legsEnd || legsEnd.length === 0) return;
 
-          // Extract timing details for the return journey.
           const leg = legsEnd[0];
           const departure = leg.departure_time
             ? new Date(leg.departure_time.value).toLocaleTimeString([], {
@@ -520,7 +457,6 @@ async function calculateTravelTime(block) {
           let totalMinutes = travelMinutes + waitingMinutes;
           const travelPlusWaiting = totalMinutes + " mins";
 
-          // Update section for 'Arbeitsende' (end of work) times and details.
           arbeitsendeSection.innerHTML = `<h4>ÖV Zeiten Arbeitsende</h4>
             <p>Abreise: ${departure}</p>
             <p>Ankunft: ${arrival}</p>
@@ -530,10 +466,8 @@ async function calculateTravelTime(block) {
             `;
           const ovParagraphs = ovSection.querySelectorAll("p");
           if (ovParagraphs.length >= 4) {
-            // Update paragraph with return journey plus waiting time.
             ovParagraphs[1].textContent = `Rückfahrt + Wartezeit (Arbeitsende): ${transitDetailsEnd.travelPlusWaiting}`;
 
-            // Calculate total OV time for the day by summing start and end durations.
             const anfahrtText =
               ovParagraphs[0].textContent.match(/(\d+)/)?.[0] || "0";
             const rueckfahrtText =
@@ -544,7 +478,6 @@ async function calculateTravelTime(block) {
             const gesamteOV = anfahrtMinutes + rueckfahrtMinutes;
             ovParagraphs[2].textContent = `Gesamte ÖV-Zeit + Wartezeit am Tag: ${gesamteOV} mins`;
 
-            // Compare total OV time with auto travel time to find time difference.
             const autoZeitText =
               block.querySelector(".auto-section p:nth-of-type(3)")
                 ?.textContent || "";
@@ -554,7 +487,6 @@ async function calculateTravelTime(block) {
             const zeitunterschied = gesamteOV - autoZeit;
             ovParagraphs[3].textContent = `ÖV vs. Auto: Zeitunterschied: ${zeitunterschied} mins`;
 
-            // Determine eligibility for deduction based on time difference.
             const diffElement = block.querySelector(".difference");
             const abzugElement = block.querySelector(".abzug");
             if (diffElement && abzugElement) {
@@ -596,10 +528,6 @@ async function calculateTravelTime(block) {
   }
 }
 
-/**
- * Prepares a calculation block by initializing autocomplete, default values, map, and event listeners.
- * @param {HTMLElement} block - The calculation block element.
- */
 function setupCalculationBlock(block) {
   // Initialize autocomplete fields for home and employer addresses.
   const homeAddressInput = block.querySelector(".homeAddress");
@@ -642,10 +570,6 @@ function setupCalculationBlock(block) {
 const calculationBlocks = [];
 let currentPageIndex = 0;
 
-/**
- * Displays only the calculation block at the specified index, hiding others.
- * @param {number} index - Index of the block to show.
- */
 function showBlock(index) {
   calculationBlocks.forEach((block, i) => {
     block.style.display = i === index ? "" : "none";
@@ -653,9 +577,6 @@ function showBlock(index) {
   currentPageIndex = index;
 }
 
-/**
- * Updates the pagination controls based on the current blocks.
- */
 function updatePagination() {
   const paginationDiv = document.querySelector(".pagination");
   paginationDiv.innerHTML = "";
