@@ -339,7 +339,7 @@ async function calculateTravelTime(block) {
         destination: workAddress,
         travelMode: google.maps.TravelMode.TRANSIT,
         transitOptions: {
-          departureTime: departureTimeStart,
+          arrivalTime: departureTimeStart,
         },
       },
       (transitResponseStart, transitStatusStart) => {
@@ -353,8 +353,20 @@ async function calculateTravelTime(block) {
 
           // Use the first leg for direct time extraction.
           const leg = legsStart[0];
-          const departure = leg.departure_time.text;
-          const arrival = leg.arrival_time.text;
+          const departure = leg.departure_time
+            ? new Date(leg.departure_time.value).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: true,
+              })
+            : "--";
+          const arrival = leg.arrival_time
+            ? new Date(leg.arrival_time.value).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: true,
+              })
+            : "--";
 
           const travelSeconds = leg.duration ? leg.duration.value : 0;
           const travelMinutes = Math.round(travelSeconds / 60);
