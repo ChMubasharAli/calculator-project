@@ -367,97 +367,101 @@ async function calculateTravelTime(block) {
           const ovSection = detailsDiv.querySelector(".ov-section");
           const ovParagraphs = ovSection.querySelectorAll("p");
           if (ovParagraphs.length >= 4) {
+            // 1st: Update Anfahrt + Wartezeit (Arbeitsbeginn)
             ovParagraphs[0].textContent = `Anfahrt + Wartezeit (Arbeitsbeginn): ${transitDetailsStart.travelPlusWaiting}`;
           }
+
+          // Now calculate ÖV for end of work to maintain sequence
+          const departureTimeEnd = new Date(
+            document.querySelector("#globalDate").value
+          );
+          const [hoursEnd, minutesEnd] = endWorkTime.split(":").map(Number);
+          departureTimeEnd.setHours(hoursEnd, minutesEnd, 0, 0);
+
+          const transitServiceEnd = new google.maps.DirectionsService();
+          transitServiceEnd.route(
+            {
+              origin: workAddress,
+              destination: homeAddress,
+              travelMode: google.maps.TravelMode.TRANSIT,
+              transitOptions: { departureTime: departureTimeEnd },
+            },
+            (transitResponseEnd, transitStatusEnd) => {
+              if (transitStatusEnd === "OK") {
+                const legsEnd = transitResponseEnd.routes[0].legs;
+                const transitDetailsEnd = extractTransitDetails(legsEnd);
+                if (!legsEnd || legsEnd.length === 0) return;
+
+                const arbeitsendeSection = detailsDiv.querySelector(
+                  ".arbeitsende-section"
+                );
+                arbeitsendeSection.innerHTML = `
+                  <h4>ÖV Zeiten Arbeitsende</h4>
+                  <p>Abreise: ${transitDetailsEnd.departure}</p>
+                  <p>Ankunft: ${transitDetailsEnd.arrival}</p>
+                  <p>Reisezeit: ${transitDetailsEnd.travelTime}</p>
+                  <p>Warten: ${transitDetailsEnd.waitingTime}</p>
+                  <p>Reisezeit + Warten: ${transitDetailsEnd.travelPlusWaiting}</p>
+                `;
+
+                const ovParagraphs = ovSection.querySelectorAll("p");
+                if (ovParagraphs.length >= 4) {
+                  // 2nd: Update Rückfahrt + Wartezeit (Arbeitsende)
+                  ovParagraphs[1].textContent = `Rückfahrt + Wartezeit (Arbeitsende): ${transitDetailsEnd.travelPlusWaiting}`;
+
+                  // 3rd: Calculate Gesamte ÖV-Zeit
+                  const anfahrtText =
+                    ovParagraphs[0].textContent.match(/(\d+)/)?.[0] || "0";
+                  const rueckfahrtText =
+                    ovParagraphs[1].textContent.match(/(\d+)/)?.[0] || "0";
+                  const anfahrtMinutes = parseInt(anfahrtText, 10);
+                  const rueckfahrtMinutes = parseInt(rueckfahrtText, 10);
+                  const gesamteOV = anfahrtMinutes + rueckfahrtMinutes;
+                  ovParagraphs[2].textContent = `Gesamte ÖV-Zeit + Wartezeit am Tag: ${gesamteOV} mins`;
+
+                  // 4th: Compare ÖV vs. Auto
+                  const autoZeitText =
+                    block.querySelector(".auto-section p:nth-of-type(3)")
+                      ?.textContent || "";
+                  const autoZeitMatch = autoZeitText.match(/(\d+)/);
+                  const autoZeit = autoZeitMatch
+                    ? parseInt(autoZeitMatch[0], 10)
+                    : 0;
+                  const zeitunterschied = gesamteOV - autoZeit;
+                  ovParagraphs[3].textContent = `ÖV vs. Auto: Zeitunterschied: ${zeitunterschied} mins`;
+
+                  // Display "Abzug" logic
+                  const diffElement = block.querySelector(".difference");
+                  const abzugElement = block.querySelector(".abzug");
+                  if (diffElement && abzugElement) {
+                    if (zeitunterschied > 90) {
+                      abzugElement.innerHTML =
+                        "<strong>Abzug:</strong> Ist möglich.";
+                      diffElement.style.color = "green";
+                      diffElement.textContent = `Weil die Dauer des ÖV um ${zeitunterschied} min länger dauert.`;
+                    } else if (zeitunterschied > 60) {
+                      abzugElement.innerHTML =
+                        "<strong>Abzug:</strong> Ist wahrscheinlich möglich.";
+                      diffElement.style.color = "orange";
+                      diffElement.textContent = `Weil die Dauer des ÖV um ${zeitunterschied} min länger dauert.`;
+                    } else {
+                      abzugElement.innerHTML =
+                        "<strong>Abzug:</strong> Ist nicht möglich.";
+                      diffElement.style.color = "red";
+                      diffElement.textContent = `Weil die Dauer des ÖV nur um ${zeitunterschied} min länger dauert.`;
+                    }
+                  }
+                }
+              } else {
+                console.error(
+                  "Transit route request failed (End): " + transitStatusEnd
+                );
+              }
+            }
+          );
         } else {
           console.error(
             "Transit route request failed (Start): " + transitStatusStart
-          );
-        }
-      }
-    );
-
-    // Calculate ÖV for end of work
-    const departureTimeEnd = new Date(
-      document.querySelector("#globalDate").value
-    );
-    const [hoursEnd, minutesEnd] = endWorkTime.split(":").map(Number);
-    departureTimeEnd.setHours(hoursEnd, minutesEnd, 0, 0);
-
-    const transitServiceEnd = new google.maps.DirectionsService();
-    transitServiceEnd.route(
-      {
-        origin: workAddress,
-        destination: homeAddress,
-        travelMode: google.maps.TravelMode.TRANSIT,
-        transitOptions: { departureTime: departureTimeEnd },
-      },
-      (transitResponseEnd, transitStatusEnd) => {
-        if (transitStatusEnd === "OK") {
-          const legsEnd = transitResponseEnd.routes[0].legs;
-          const transitDetailsEnd = extractTransitDetails(legsEnd);
-          if (!legsEnd || legsEnd.length === 0) return;
-
-          const arbeitsendeSection = detailsDiv.querySelector(
-            ".arbeitsende-section"
-          );
-          arbeitsendeSection.innerHTML = `
-            <h4>ÖV Zeiten Arbeitsende</h4>
-            <p>Abreise: ${transitDetailsEnd.departure}</p>
-            <p>Ankunft: ${transitDetailsEnd.arrival}</p>
-            <p>Reisezeit: ${transitDetailsEnd.travelTime}</p>
-            <p>Warten: ${transitDetailsEnd.waitingTime}</p>
-            <p>Reisezeit + Warten: ${transitDetailsEnd.travelPlusWaiting} end time</p>
-          `;
-
-          const ovSection = detailsDiv.querySelector(".ov-section");
-          const ovParagraphs = ovSection.querySelectorAll("p");
-          if (ovParagraphs.length >= 4) {
-            ovParagraphs[1].textContent = `Rückfahrt + Wartezeit (Arbeitsende): ${transitDetailsEnd.travelPlusWaiting}`;
-
-            // Calculate Gesamte ÖV Zeit
-            const anfahrtText =
-              ovParagraphs[0].textContent.match(/(\d+)/)?.[0] || "0";
-            const rueckfahrtText =
-              ovParagraphs[1].textContent.match(/(\d+)/)?.[0] || "0";
-            const anfahrtMinutes = parseInt(anfahrtText, 10);
-            const rueckfahrtMinutes = parseInt(rueckfahrtText, 10);
-            const gesamteOV = anfahrtMinutes + rueckfahrtMinutes;
-            ovParagraphs[2].textContent = `Gesamte ÖV-Zeit + Wartezeit am Tag: ${gesamteOV} mins`;
-
-            // Compare ÖV vs. Auto
-            const autoZeitText =
-              block.querySelector(".auto-section p:nth-of-type(3)")
-                ?.textContent || "";
-            const autoZeitMatch = autoZeitText.match(/(\d+)/);
-            const autoZeit = autoZeitMatch ? parseInt(autoZeitMatch[0], 10) : 0;
-            const zeitunterschied = gesamteOV - autoZeit;
-            ovParagraphs[3].textContent = `ÖV vs. Auto: Zeitunterschied: ${zeitunterschied} mins`;
-
-            // Display "Abzug" logic
-            const diffElement = block.querySelector(".difference");
-            const abzugElement = block.querySelector(".abzug");
-            if (diffElement && abzugElement) {
-              if (zeitunterschied > 90) {
-                abzugElement.innerHTML = "<strong>Abzug:</strong> Ist möglich.";
-                diffElement.style.color = "green";
-                diffElement.textContent = `Weil die Dauer des ÖV um ${zeitunterschied} min länger dauert.`;
-              } else if (zeitunterschied > 60) {
-                abzugElement.innerHTML =
-                  "<strong>Abzug:</strong> Ist wahrscheinlich möglich.";
-                diffElement.style.color = "orange";
-                diffElement.textContent = `Weil die Dauer des ÖV um ${zeitunterschied} min länger dauert.`;
-              } else {
-                abzugElement.innerHTML =
-                  "<strong>Abzug:</strong> Ist nicht möglich.";
-                diffElement.style.color = "red";
-                diffElement.textContent = `Weil die Dauer des ÖV nur um ${zeitunterschied} min länger dauert.`;
-              }
-            }
-          }
-        } else {
-          console.error(
-            "Transit route request failed (End): " + transitStatusEnd
           );
         }
       }
