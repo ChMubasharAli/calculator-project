@@ -169,24 +169,9 @@ document.addEventListener("DOMContentLoaded", () => {
     globalDateInput.value = getDateOneMonthLater();
   }
 
-  // 2) If the URL has no query string, append default addresses
-  if (!window.location.search) {
-    const defaultQueryString =
-      "?home1=Feldstrasse%2018,%207247%20Saas%20im%20Pr%C3%A4ttigau" +
-      "&work1=Rehaklinik%20Bellikon%20(Standort%20Chur),%20Kalchb%C3%BChlstrasse%2040,%207000%20Chur" +
-      "&home2=Unterdorf%2021,%207027%20L%C3%BCen" +
-      "&work2=Rehaklinik%20Bellikon%20(Standort%20Chur),%20Kalchb%C3%BChlstrasse%2040,%207000%20Chur" +
-      "&home3=Feldstrasse%2018,%207247%20Saas%20im%20Pr%C3%A4ttigau" +
-      "&work3=Unterdorf%2021,%207027%20L%C3%BCen";
+  // Removed the automatic appending of defaultQueryString when no query parameters are present
 
-    const currentUrl = window.location.origin + window.location.pathname;
-    const newUrl = currentUrl + "/" + defaultQueryString;
-    // Update the browser URL without page reload
-    window.history.replaceState({}, "", newUrl);
-  }
-
-  // 3) Now that the URL may be updated, do the rest of your setup
-  // Initialize blocks, populate from URL, etc.
+  // 2) Now that the URL may have query parameters, do the rest of your setup
   initializeAllBlocks();
   populateBlocksFromUrlParams();
   if (calculationBlocks.length > 0) {
@@ -249,8 +234,10 @@ async function calculateTravelTime(block) {
   }
 
   const homeAddress = block.querySelector(".homeAddress").value;
-  const startWorkTime = block.querySelector(".startTime").value || "07:30";
-  const endWorkTime = block.querySelector(".endTime").value || "17:30";
+  const startTimeInput = block.querySelector(".startTime");
+  const endTimeInput = block.querySelector(".endTime");
+  const startWorkTime = startTimeInput ? startTimeInput.value : "07:30";
+  const endWorkTime = endTimeInput ? endTimeInput.value : "17:30";
   const workAddress = block.querySelector(".employerAddress")
     ? block.querySelector(".employerAddress").value
     : "";
@@ -728,7 +715,7 @@ function populateBlocksFromUrlParams() {
           <p>Reisezeit + Warten: -- Minuten</p>
         </div>
         <div class="arbeitsende-section">
-          <h4>ÖV Zeiten Arbeitsende</h4>
+          <h4>ÖV Zeiten Arbeitsende</h4>oka
           <p>Abreise: -- Uhr</p>
           <p>Ankunft: -- Uhr</p>
           <p>Reisezeit: -- Minuten</p>
@@ -748,7 +735,7 @@ function populateBlocksFromUrlParams() {
       block = newBlock;
     }
 
-    // Fill this block's home/employer inputs
+    // Fill this block's home/work inputs
     block.querySelector(".homeAddress").value = pair.home;
     block.querySelector(".employerAddress").value = pair.work;
   });
